@@ -1,4 +1,4 @@
-# 🇮🇩 SANTAI - Sistem Analisis Inflasi
+# 🇮🇩 Inflasi dan Pangan
 
 Dashboard interaktif untuk analisis data inflasi nasional (BPS) dan harga pangan strategis (PIHPS) berbasis **Python Flask** + **Alpine.js** + **TailwindCSS** + **Chart.js**.
 

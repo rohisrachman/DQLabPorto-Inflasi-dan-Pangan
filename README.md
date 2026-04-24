@@ -1,6 +1,6 @@
-# 🇮🇩 Dashboard Inflasi Indonesia
+# 🇮🇩 SANTAI - Sistem Analisis Inflasi
 
-Dashboard interaktif untuk analisis data inflasi nasional (BPS) dan harga pangan strategis (PIHPS) berbasis **Python Flask** + **Next.js** + **TailwindCSS**.
+Dashboard interaktif untuk analisis data inflasi nasional (BPS) dan harga pangan strategis (PIHPS) berbasis **Python Flask** + **Alpine.js** + **TailwindCSS** + **Chart.js**.
 
 ---
 
@@ -8,79 +8,71 @@ Dashboard interaktif untuk analisis data inflasi nasional (BPS) dan harga pangan
 
 | Fitur | Deskripsi |
 |---|---|
-| **KPI Ringkasan** | Inflasi YoY, MoM, YTD terbaru dengan delta vs bulan lalu |
-| **Tren Inflasi** | Line chart interaktif multi-provinsi (hingga 5 sekaligus) |
-| **Peta Choropleth** | Peta folium interaktif — inflasi per provinsi & harga per kota |
-| **Harga Komoditas** | 10 komoditas PIHPS: tren, rata-rata, min, max |
-| **Ranking Provinsi** | Bar chart 10 provinsi inflasi tertinggi |
-| **Filter Lengkap** | Jenis inflasi (YoY/MoM/YTD), provinsi, komoditas |
+| **KPI Ringkasan** | Inflasi YoY, MtM, YTD terbaru dengan delta vs bulan sebelumnya |
+| **Tren Inflasi** | Line chart interaktif multi-provinsi dengan search dan download |
+| **Distribusi Spasial** | Peta choropleth interaktif inflasi per provinsi dengan filter kategori |
+| **Heatmap Harga Pangan** | Heatmap harga komoditas pangan dengan color coding perubahan harga |
+| **Top 3 Inflasi Daerah** | 3 provinsi inflasi tertinggi dengan selector YoY/MtM/YTD |
+| **Perbandingan Regional** | Komparasi inflasi nasional vs regional |
+| **Top Komoditas Penyumbang** | 3 komoditas dengan kenaikan harga tertinggi |
+| **Dark Mode** | Toggle tema gelap/terang dengan persistence |
+| **Export PDF/PNG** | Export dashboard ke format PDF atau PNG |
+| **Mobile Responsive** | Design responsif untuk berbagai ukuran layar |
+| **Loading States** | Skeleton screens dan loading indicators |
+| **Animated Transitions** | Transisi animasi saat perubahan data |
+| **Caching** | Server-side caching untuk performa lebih cepat |
+| **Error Boundary** | Graceful error handling |
+| **Data Quality Indicator** | Indikator kualitas data |
 
 ---
 
 ## 🗂️ Struktur Proyek
 
 ```
-inflation-dashboard/
+DQLAB Porto/
 ├── backend/                  # Python Flask API
 │   ├── app.py                # Semua endpoint API
 │   ├── requirements.txt
 │   ├── Dockerfile
+│   ├── templates/
+│   │   ├── base.html         # Base template dengan Alpine.js
+│   │   └── index.html        # Halaman dashboard utama
 │   └── data/
-│       ├── BPS_Inflasi_WideFormat_Datetime.xlsx
-│       └── PIHPS_Provinsi_WideFormat.csv
+│       ├── BPS/
+│       │   ├── BPS_Inflasi_WideFormat.csv
+│       │   ├── BPS_Inflasi_LongFormat.csv
+│       │   └── Inflasi data Excel files
+│       ├── PIHPS/
+│       │   ├── PIHPS_Joined_Provinsi_Komoditas.csv
+│       │   └── Data harga per provinsi Excel files
+│       ├── indonesia_provinces.geojson
+│       └── logo.png
 │
-├── frontend/                 # Next.js 14 + TailwindCSS
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── page.tsx      # Halaman utama (routing antar panel)
-│   │   │   ├── layout.tsx
-│   │   │   └── globals.css
-│   │   ├── components/
-│   │   │   ├── Sidebar.tsx
-│   │   │   ├── KPICards.tsx
-│   │   │   ├── TrenInflasiChart.tsx
-│   │   │   ├── KomoditasPanel.tsx
-│   │   │   ├── PetaPanel.tsx
-│   │   │   └── RankingProvinsi.tsx
-│   │   └── lib/
-│   │       └── api.ts        # Fetch helpers & type definitions
-│   ├── next.config.js        # Proxy → Flask :5000
-│   ├── tailwind.config.js
-│   ├── Dockerfile
-│   └── package.json
-│
-└── docker-compose.yml        # One-command startup
+└── Data/                     # Raw data files
 ```
 
 ---
 
 ## 🚀 Cara Menjalankan
 
-### Opsi A — Manual (Development)
+### Local Development
 
-#### 1. Backend (Flask)
+#### 1. Install Dependencies
 ```bash
 cd backend
-python -m venv venv
-source venv/bin/activate      # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-python app.py
-# → API berjalan di http://localhost:5000
+pip install flask flask-cors flask-caching pandas numpy folium openpyxl
 ```
 
-#### 2. Frontend (Next.js)
+#### 2. Run Server
 ```bash
-cd frontend
-npm install
-npm run dev
-# → Dashboard berjalan di http://localhost:3000
+python3 app.py
+# → Dashboard berjalan di http://localhost:5000
 ```
 
-### Opsi B — Docker Compose (Production)
+### Docker (Production)
 ```bash
 docker-compose up --build
-# → Dashboard: http://localhost:3000
-# → API:       http://localhost:5000
+# → Dashboard: http://localhost:5000
 ```
 
 ---
@@ -89,18 +81,21 @@ docker-compose up --build
 
 | Method | Path | Deskripsi |
 |---|---|---|
-| GET | `/api/kpi` | KPI nasional (YoY, MoM, YTD) |
+| GET | `/api/kpi` | KPI nasional (YoY, MtM, YTD) |
 | GET | `/api/tren-inflasi?provinsi=INDONESIA&tipe=YoY` | Data tren inflasi |
-| GET | `/api/inflasi-peta?tipe=YoY` | Data choropleth per provinsi |
-| GET | `/api/top-inflasi` | 10 provinsi inflasi tertinggi |
+| GET | `/api/top-inflasi?type=yoy` | 3 provinsi inflasi tertinggi |
+| GET | `/api/komoditas-list` | Daftar komoditas |
 | GET | `/api/harga-summary` | Ringkasan harga semua komoditas |
-| GET | `/api/harga-tren?komoditas=Beras` | Tren harga komoditas |
-| GET | `/api/harga-latest?komoditas=Beras` | Harga terbaru per kota |
+| GET | `/api/period-list` | Daftar periode data |
+| GET | `/api/provinsi-list` | Daftar nama provinsi |
+| GET | `/api/regional-inflasi` | Rata-rata inflasi per region |
+| GET | `/api/commodity-range` | Min, max, avg harga per komoditas |
+| GET | `/api/price-index-provinsi` | Index harga per provinsi |
+| GET | `/api/top-komoditas-provinsi` | Top komoditas per provinsi |
+| GET | `/api/heatmap-harga-pangan` | Data heatmap harga pangan |
 | GET | `/api/map-inflasi?tipe=YoY` | HTML peta folium inflasi |
 | GET | `/api/map/<komoditas>` | HTML peta folium harga komoditas |
-| GET | `/api/provinsi-list` | Daftar nama provinsi |
-| GET | `/api/komoditas-list` | Daftar komoditas |
-| GET | `/api/period-list` | Daftar periode data |
+| GET | `/data/<filename>` | Serve static files dari Data directory |
 
 ---
 
@@ -108,25 +103,43 @@ docker-compose up --build
 
 | Dataset | Sumber | Periode |
 |---|---|---|
-| `BPS_Inflasi_WideFormat_Datetime.xlsx` | Badan Pusat Statistik | Jan 2024 – Apr 2026 |
-| `PIHPS_Provinsi_WideFormat.csv` | Pusat Informasi Harga Pangan Strategis | Jan 2024 – Apr 2026 |
+| `BPS_Inflasi_*` | Badan Pusat Statistik | Jan 2024 – Apr 2026 |
+| `PIHPS_*` | Pusat Informasi Harga Pangan Strategis | Jan 2024 – Apr 2026 |
 
 ---
 
 ## 🗺️ Catatan Peta
 
-Peta choropleth menggunakan data GeoJSON Indonesia dari:
-```
-https://raw.githubusercontent.com/superpikar/indonesia-geojson/master/indonesia-edit.json
-```
-File akan diunduh otomatis saat pertama kali endpoint `/api/map/*` atau `/api/map-inflasi` dipanggil. Pastikan backend memiliki koneksi internet saat startup pertama.
+Peta choropleth menggunakan data GeoJSON Indonesia dari file `indonesia_provinces.geojson`. Peta dirender menggunakan library Folium dan di-embed via `<iframe>`.
 
 ---
 
 ## 🛠️ Teknologi
 
-- **Backend**: Python 3.11, Flask 3.0, Pandas, Folium, NumPy
-- **Frontend**: Next.js 14 (App Router), React 18, TypeScript, TailwindCSS, Recharts
-- **Charts**: Recharts (AreaChart, LineChart, BarChart)
-- **Map**: Folium (choropleth + tooltip) di-embed via `<iframe>`
+- **Backend**: Python 3.14, Flask 3.1, Pandas, NumPy, Flask-Caching
+- **Frontend**: Alpine.js 3.x, TailwindCSS, Chart.js
+- **Charts**: Chart.js (Line Chart, Bubble Chart)
+- **Map**: Folium (choropleth + tooltip)
+- **Export**: html2canvas, jsPDF
 - **Deploy**: Docker + Docker Compose
+
+---
+
+## 📝 Fitur Tambahan
+
+### Caching
+- Server-side caching dengan FileSystemCache (timeout: 10 menit)
+- Cache headers untuk static files (1 hour)
+- @lru_cache untuk data loading functions
+
+### Performance
+- Responsive grid system (mobile-friendly)
+- Loading skeleton screens
+- Animated transitions dengan staggered delays
+- Error boundary untuk graceful error handling
+
+### UX Enhancements
+- Dark mode dengan localStorage persistence
+- Interactive tooltips dengan detail informasi
+- Data quality indicators
+- Export dashboard ke PDF/PNG

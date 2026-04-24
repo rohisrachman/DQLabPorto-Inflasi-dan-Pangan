@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SANTAI - Sistem Analisis Inflasi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        :root {
+            --primary-50: #eef2ff;
+            --primary-100: #e0e7ff;
+            --primary-200: #c7d2fe;
+            --primary-300: #a5b4fc;
+            --primary-400: #818cf8;
+            --primary-500: #6366f1;
+            --primary-600: #4338ca;
+            --primary-700: #3730a3;
+            --primary-800: #312e81;
+            --primary-900: #1e1b4b;
+        }
+        .kpi-glow {
+            position: relative;
+        }
+        .kpi-glow::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, rgba(66,105,208,0.4), rgba(239,177,24,0.1));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+        .map-frame {
+            border: none;
+        }
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-slate-50" x-data="app()" x-init="init()">
+    {% block content %}{% endblock %}
+
+    <script>
+        function app() {
+            return {
+                provinsiList: [],
+                lastUpdated: '',
+                kpi: null,
+                trenData: [],
+                selectedProvs: ['INDONESIA'],
+                tipeTren: 'YoY',
+                tipeMap: 'YoY',
+                komoditasList: [],
+                hargaSummary: [],
+                topInflasi: [],
+                periodList: [],
+                selectedPeriod: '',
+                mapMode: 'Inflasi',
+                selectedKomoditas: 'Bawang Merah',
+                mapCategory: 'Inflasi',
+                comparisonRegion: '',
+                comparisonData: { yoy: null, mom: null, ytd: null },
+                heatmapData: { months: [], data: {}, changes: {}, minPrice: 0, maxPrice: 0 },
+                topInflasiType: 'YoY',
+                topInflasiData: [],
+                showCreatorPopup: false,
+                isLoading: true,
+                darkMode: localStorage.getItem('darkMode') === 'true',
+                error: null,
+                debounceTimer: null,
+                viewMode: 'chart', // 'chart' or 'table'
+                dateRangeStart: '',
+                dateRangeEnd: '',
+                searchQuery: '',
+                alertThreshold: 5, // Alert if inflation exceeds this percentage
+                showAlert: false,
+                favoriteProvs: [],
+                regionalInflasi: [],
+                commodityRange: [],
+                priceIndexProvinsi: [],
+                topKomoditasProvinsi: [],
+
+                get filteredProvinsiList() {
+                    if (!this.searchQuery) return this.provinsiList;
+                    return this.provinsiList.filter(p => 
+                        p.toLowerCase().includes(this.searchQuery.toLowerCase())
+                    );
+                },
+
+                toggleFavorite(prov) {
+                    const idx = this.favoriteProvs.indexOf(prov);
+                    if (idx > -1) {
+                        this.favoriteProvs.splice(idx, 1);
+                    } else {
+                        this.favoriteProvs.push(prov);
+                    }
+                    // Save to localStorage
+                    localStorage.setItem('favoriteProvs', JSON.stringify(this.favoriteProvs));
+                },
+
+                getInflasiColor(value) {
+                    if (value === null || value === undefined) return 'text-slate-500';
+                    const absValue = Math.abs(value);
+                    if (absValue < 3) return 'text-emerald-600';
+                    if (absValue >= 3 && absValue < 5) return 'text-amber-600';
+                    return 'text-red-600';
+                },
+
+                getInflasiBgColor(value) {
+                    if (value === null || value === undefined) return 'bg-slate-50';
+                    const absValue = Math.abs(value);
+                    if (absValue < 3) return 'bg-emerald-100';
+                    if (absValue >= 3 && absValue < 5) return 'bg-amber-100';
+                    return 'bg-red-100';
+                },
+
+                getInflasiBorderColor(value) {
+                    if (value === null || value === undefined) return 'border-slate-200';
+                    const absValue = Math.abs(value);
+                    if (absValue < 3) return 'border-emerald-300';
+                    if (absValue >= 3 && absValue < 5) return 'border-amber-300';
+                    return 'border-red-300';
+                },
+
+                getStabilityIndex() {
+                    if (!this.kpi) return { value: 0, label: 'N/A', color: 'text-slate-500' };
+                    const yoy = Math.abs(this.kpi.yoy?.value || 0);
+                    const mom = Math.abs(this.kpi.mom?.value || 0);
+                    const volatility = Math.abs(yoy - mom);
+                    // Stability score: 100 - (volatility * 20) - (yoy * 5)
+                    let score = 100 - (volatility * 20) - (yoy * 5);
+                    score = Math.max(0, Math.min(100, score));
+                    
+                    let label, color;
+                    if (score >= 80) { label = 'Very Stable'; color = 'text-emerald-600'; }
+                    else if (score >= 60) { label = 'Stable'; color = 'text-emerald-500'; }
+                    else if (score >= 40) { label = 'Moderate'; color = 'text-amber-500'; }
+                    else if (score >= 20) { label = 'Volatile'; color = 'text-orange-500'; }
+                    else { label = 'Unstable'; color = 'text-red-500'; }
+                    
+                    return { value: score.toFixed(0), label, color };
+                },
+
+                getHealthIndexScore() {
+                    if (!this.kpi || !this.kpi.yoy) return 0;
+                    const yoy = Math.abs(this.kpi.yoy.value || 0);
+                    // Score: 100 - (yoy * 10), min 0, max 100
+                    // <3% = 70-100, 3-5% = 50-70, >5% = 0-50
+                    let score = 100 - (yoy * 10);
+                    return Math.max(0, Math.min(100, score));
+                },
+
+                getHealthStatus() {
+                    const score = this.getHealthIndexScore();
+                    if (score >= 70) return { label: 'Stable', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' };
+                    if (score >= 50) return { label: 'Watch', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200' };
+                    return { label: 'High Risk', color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' };
+                },
+
+                getInsight() {
+                    if (!this.kpi || !this.kpi.yoy) return 'Memuat data...';
+                    const yoy = this.kpi.yoy.value || 0;
+                    if (yoy > 5) return 'Inflasi tinggi didorong oleh harga pangan dan energi. Perlu monitoring ketat.';
+                    if (yoy > 3) return 'Inflasi moderat dengan tren kenaikan pada komoditas pangan.';
+                    if (yoy > 0) return 'Inflasi stabil dalam batas wajar. Harga pangan masih menjadi faktor utama.';
+                    return 'Inflasi terkendali dengan baik. Tidak ada tekanan harga signifikan.';
+                },
+
+                getMonthlyStatus() {
+                    // Simulate monthly status based on trend data
+                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+                    return months.map((month, i) => {
+                        const status = i % 3 === 0 ? 'Normal' : i % 3 === 1 ? 'Waspada' : 'Stabil';
+                        const icon = status === 'Normal' ? '✔' : status === 'Waspada' ? '⚠' : '✔';
+                        return { month, status, icon };
+                    });
+                },
+
+                getTop3Provinces() {
+                    if (!this.topInflasi || this.topInflasi.length === 0) return [];
+                    return this.topInflasi.slice(0, 3).map(item => ({
+                        name: item.Provinsi.replace('DI ', '').replace('DKI ', ''),
+                        value: item.value.toFixed(2)
+                    }));
+                },
+
+                loadFavorites() {
+                    const saved = localStorage.getItem('favoriteProvs');
+                    if (saved) {
+                        this.favoriteProvs = JSON.parse(saved);
+                    }
+                },
+
+                exportTrenData() {
+                    if (!this.trenData || this.trenData.length === 0) return;
+                    
+                    const headers = ['Date', 'Provinsi', 'Value'];
+                    const rows = this.trenData.map(d => [d.date, d.provinsi, d.value]);
+                    const csvContent = [headers, ...rows].map(e => e.join(',')).join('\n');
+                    
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    const url = URL.createObjectURL(blob);
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', `inflasi_tren_${this.tipeTren}_${new Date().toISOString().split('T')[0]}.csv`);
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                },
+
+                async init() {
+                    this.showCreatorPopup = false;
+                    // Initialize dark mode from localStorage
+                    if (localStorage.getItem('darkMode') === 'true') {
+                        this.darkMode = true;
+                        document.documentElement.classList.add('dark');
+                    }
+                    try {
+                        this.loadFavorites();
+                        await this.loadProvinsiList();
+                        await this.loadKPI();
+                        await this.loadTrenInflasi();
+                        await this.loadKomoditasList();
+                        await this.loadHargaSummary();
+                        await this.loadTopInflasi();
+                        await this.loadPeriodList();
+                        await this.loadRegionalInflasi();
+                        await this.loadCommodityRange();
+                        await this.loadPriceIndexProvinsi();
+                        await this.loadTopKomoditasProvinsi();
+                        await this.loadHeatmapData();
+                        await this.loadTopInflasiData();
+                        this.lastUpdated = new Date().toLocaleString('id-ID', {
+                            day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                        });
+                        this.isLoading = false;
+                    } catch (err) {
+                        console.error('Initialization error:', err);
+                        this.error = 'Gagal memuat dashboard. Silakan refresh halaman.';
+                        this.isLoading = false;
+                    }
+                },
+                toggleDarkMode() {
+                    this.darkMode = !this.darkMode;
+                    localStorage.setItem('darkMode', this.darkMode);
+                    document.documentElement.classList.toggle('dark', this.darkMode);
+                },
+                async exportDashboard(format) {
+                    const dashboard = document.querySelector('main');
+                    if (!dashboard) return;
+                    
+                    try {
+                        if (format === 'png') {
+                            const canvas = await html2canvas(dashboard, {
+                                scale: 2,
+                                useCORS: true,
+                                backgroundColor: this.darkMode ? '#0f172a' : '#F7F9FC'
+                            });
+                            const link = document.createElement('a');
+                            link.download = `dashboard-${new Date().toISOString().split('T')[0]}.png`;
+                            link.href = canvas.toDataURL();
+                            link.click();
+                        } else if (format === 'pdf') {
+                            const { jsPDF } = window.jspdf;
+                            const canvas = await html2canvas(dashboard, {
+                                scale: 2,
+                                useCORS: true,
+                                backgroundColor: this.darkMode ? '#0f172a' : '#F7F9FC'
+                            });
+                            const imgData = canvas.toDataURL('image/png');
+                            const pdf = new jsPDF('l', 'mm', 'a4');
+                            const pdfWidth = pdf.internal.pageSize.getWidth();
+                            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                            pdf.save(`dashboard-${new Date().toISOString().split('T')[0]}.pdf`);
+                        }
+                    } catch (error) {
+                        console.error('Export failed:', error);
+                        this.error = 'Gagal mengekspor dashboard';
+                    }
+                },
+                async fetchAPI(path) {
+                    try {
+                        const res = await fetch(`/api${path}`);
+                        if (!res.ok) throw new Error(`API error ${res.status}`);
+                        return res.json();
+                    } catch (err) {
+                        this.error = `Gagal memuat data: ${err.message}`;
+                        console.error('API Error:', err);
+                        throw err;
+                    }
+                },
+
+                async loadProvinsiList() {
+                    this.provinsiList = await this.fetchAPI('/provinsi-list');
+                },
+
+                async loadKPI() {
+                    this.kpi = await this.fetchAPI('/kpi');
+                    // Check if inflation exceeds threshold
+                    if (this.kpi && this.kpi.yoy && this.kpi.yoy.value > this.alertThreshold) {
+                        this.showAlert = true;
+                    }
+                },
+
+                async loadRegionalInflasi() {
+                    this.regionalInflasi = await this.fetchAPI('/regional-inflasi');
+                },
+
+                async loadCommodityRange() {
+                    this.commodityRange = await this.fetchAPI('/commodity-range');
+                },
+
+                async loadPriceIndexProvinsi() {
+                    this.priceIndexProvinsi = await this.fetchAPI('/price-index-provinsi');
+                },
+
+                async loadTopKomoditasProvinsi() {
+                    this.topKomoditasProvinsi = await this.fetchAPI('/top-komoditas-provinsi');
+                },
+
+                async loadTrenInflasi() {
+                    const provs = this.selectedProvs.join(',');
+                    console.log('Loading tren inflasi:', provs, this.tipeTren);
+                    this.trenData = await this.fetchAPI(`/tren-inflasi?provinsi=${provs}&tipe=${this.tipeTren}`);
+                    console.log('Tren data loaded:', this.trenData);
+                    
+                    // Filter by date range if specified
+                    if (this.dateRangeStart || this.dateRangeEnd) {
+                        this.trenData = this.trenData.filter(d => {
+                            if (this.dateRangeStart && d.date < this.dateRangeStart) return false;
+                            if (this.dateRangeEnd && d.date > this.dateRangeEnd) return false;
+                            return true;
+                        });
+                    }
+                    
+                    setTimeout(() => {
+                        this.updateChart();
+                    }, 100);
+                },
+
+                updateChart() {
+                    console.log('updateChart called, window.trenChart:', window.trenChart, 'trenData:', this.trenData);
+                    if (!window.trenChart) {
+                        console.error('Chart not initialized');
+                        return;
+                    }
+                    if (!this.trenData || this.trenData.length === 0) {
+                        console.error('No data available');
+                        return;
+                    }
+                    
+                    const colors = ['#4269D0', '#EFB118', '#FF725C', '#6CC5B0', '#8b5cf6'];
+                    
+                    // Merge data from all provinces
+                    const merged = {};
+                    this.trenData.forEach(point => {
+                        if (!merged[point.date]) merged[point.date] = { date: point.date };
+                        merged[point.date][point.provinsi] = point.value;
+                    });
+
+                    const chartData = Object.values(merged).sort((a, b) => a.date.localeCompare(b.date));
+                    const labels = chartData.map(d => {
+                        const [y, m] = d.date.split('-');
+                        const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+                        return `${months[parseInt(m) - 1]} ${y}`;
+                    });
+
+                    const datasets = this.selectedProvs.map((prov, i) => {
+                        const dataValues = chartData.map(d => d[prov] || null);
+                        console.log(`Data for ${prov}:`, dataValues);
+                        return {
+                            label: prov === 'INDONESIA' ? '🇮🇩 Nasional' : prov.replace('DI ', '').replace('DKI ', ''),
+                            data: dataValues,
+                            borderColor: colors[i],
+                            backgroundColor: colors[i] + '20',
+                            fill: false,
+                            tension: 0.4,
+                            spanGaps: true
+                        };
+                    });
+
+                    console.log('Updating chart with labels:', labels, 'datasets:', datasets);
+                    window.trenChart.data.labels = labels;
+                    window.trenChart.data.datasets = datasets;
+                    window.trenChart.update();
+                },
+
+                async loadKomoditasList() {
+                    this.komoditasList = await this.fetchAPI('/komoditas-list');
+                },
+
+                async loadHargaSummary() {
+                    this.hargaSummary = await this.fetchAPI('/harga-summary');
+                },
+
+                async loadTopInflasi() {
+                    this.topInflasi = await this.fetchAPI('/top-inflasi');
+                },
+
+                async loadPeriodList() {
+                    this.periodList = await this.fetchAPI('/period-list');
+                    if (this.periodList.length > 0) {
+                        this.selectedPeriod = this.periodList[this.periodList.length - 1];
+                    }
+                },
+
+                formatDate(d) {
+                    if (/^\d{4}-\d{2}$/.test(d)) {
+                        const [y, m] = d.split('-');
+                        const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+                        return `${months[parseInt(m) - 1]} ${y}`;
+                    }
+                    return d;
+                },
+
+                formatPeriod(period) {
+                    const [year, month] = period.split('-');
+                    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                    return `${months[parseInt(month) - 1]} ${year}`;
+                },
+
+                toggleProv(prov) {
+                    const idx = this.selectedProvs.indexOf(prov);
+                    if (idx > -1) {
+                        this.selectedProvs.splice(idx, 1);
+                    } else if (this.selectedProvs.length < 5) {
+                        this.selectedProvs.push(prov);
+                    }
+                    this.debouncedLoadTrenInflasi();
+                },
+
+                debouncedLoadTrenInflasi() {
+                    clearTimeout(this.debounceTimer);
+                    this.debounceTimer = setTimeout(() => {
+                        this.loadTrenInflasi();
+                    }, 300);
+                },
+
+                downloadChart(canvasId) {
+                    const canvas = document.getElementById(canvasId);
+                    if (!canvas) return;
+                    
+                    const link = document.createElement('a');
+                    link.download = `inflasi-chart-${this.tipeTren}-${new Date().toISOString().split('T')[0]}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                },
+
+                async loadComparisonData() {
+                    if (!this.comparisonRegion) {
+                        this.comparisonData = { yoy: null, mom: null, ytd: null };
+                        return;
+                    }
+                    
+                    try {
+                        const data = await this.fetchAPI(`/kpi?provinsi=${encodeURIComponent(this.comparisonRegion)}&period=${encodeURIComponent(this.selectedPeriod)}`);
+                        this.comparisonData = {
+                            yoy: data?.yoy?.value || null,
+                            mom: data?.mom?.value || null,
+                            ytd: data?.ytd?.value || null
+                        };
+                    } catch (error) {
+                        console.error('Failed to load comparison data:', error);
+                        this.comparisonData = { yoy: null, mom: null, ytd: null };
+                    }
+                },
+
+                getComparisonColor(type) {
+                    const national = this.kpi?.[type]?.value || 0;
+                    const regional = this.comparisonData?.[type];
+                    if (regional === null) return 'text-slate-400';
+                    return regional > national ? 'text-red-500' : regional < national ? 'text-emerald-500' : 'text-slate-800';
+                },
+
+                getHeatmapColor(price, change) {
+                    if (change === undefined || change === null) return 'background-color: #f1f5f9; color: #64748b;';
+                    
+                    // Color based on price change: green (decrease), yellow (stable), red (increase)
+                    if (change < -0.5) {
+                        return 'background-color: #22c55e; color: white;';
+                    } else if (change > 0.5) {
+                        return 'background-color: #ef4444; color: white;';
+                    } else {
+                        return 'background-color: #eab308; color: white;';
+                    }
+                },
+
+                formatPrice(price) {
+                    if (!price || price === 0) return '-';
+                    
+                    if (price >= 1000) {
+                        const ribu = (price / 1000).toFixed(0);
+                        return `Rp. ${ribu} Ribu`;
+                    } else {
+                        return `Rp. ${price.toFixed(0)}`;
+                    }
+                },
+
+                async loadHeatmapData() {
+                    try {
+                        const data = await this.fetchAPI('/heatmap-harga-pangan');
+                        this.heatmapData = data;
+                    } catch (error) {
+                        console.error('Failed to load heatmap data:', error);
+                    }
+                },
+
+                async loadTopInflasiData() {
+                    if (!this.selectedPeriod) return;
+                    try {
+                        const data = await this.fetchAPI(`/top-inflasi?type=${this.topInflasiType.toLowerCase()}&period=${encodeURIComponent(this.selectedPeriod)}`);
+                        this.topInflasiData = data || [];
+                    } catch (error) {
+                        console.error('Failed to load top inflasi data:', error);
+                    }
+                },
+
+                addProvToChart(prov) {
+                    if (!this.selectedProvs.includes(prov)) {
+                        this.selectedProvs.push(prov);
+                        this.loadTrenInflasi();
+                    }
+                },
+
+                removeProvFromChart(idx) {
+                    this.selectedProvs.splice(idx, 1);
+                    if (this.selectedProvs.length === 0) {
+                        this.selectedProvs = ['INDONESIA'];
+                    }
+                    this.loadTrenInflasi();
+                },
+
+                setTipeTren(t) {
+                    this.tipeTren = t;
+                    this.loadTrenInflasi();
+                },
+
+                setTipeMap(t) {
+                    this.tipeMap = t;
+                    this.refreshMap();
+                },
+
+                setMapCategory(cat) {
+                    this.mapCategory = cat;
+                    this.refreshMap();
+                },
+
+                get mapUrl() {
+                    if (this.mapCategory === 'Inflasi') {
+                        return `/api/map-inflasi?tipe=${this.tipeMap}&period=${encodeURIComponent(this.selectedPeriod)}&_=${Date.now()}`;
+                    } else {
+                        return `/api/map/${encodeURIComponent(this.selectedKomoditas)}?period=${encodeURIComponent(this.selectedPeriod)}&_=${Date.now()}`;
+                    }
+                },
+
+                refreshMap() {
+                    this.$refs.mapIframe.src = this.mapUrl;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,608 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex h-screen overflow-hidden" :class="darkMode ? 'bg-slate-900' : 'bg-[#F7F9FC]'">
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Header -->
+        <header :class="darkMode ? 'bg-slate-800' : 'bg-gradient-to-r from-blue-600 to-blue-500'" class="h-14 shrink-0 flex items-center justify-between px-6 shadow-sm z-10">
+            <div class="flex items-center gap-4">
+                <img src="/data/logo.png" alt="SANTAI Logo" class="h-10 w-auto">
+            </div>
+
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/10 border border-white/20">
+                    <div class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></div>
+                    <span class="text-[10px] text-blue-100">Sumber Data : PIHPS dan BPS 2024-2026</span>
+                </div>
+                <div class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/5 border border-white/10">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-200"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    <span class="text-[10px] text-blue-100" x-text="lastUpdated"></span>
+                </div>
+                <div class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/5 border border-white/10" title="Kualitas Data">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-400"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    <span class="text-[10px] text-blue-100">Data Lengkap</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button @click="exportDashboard('png')" class="w-9 h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center text-white hover:bg-white/30 transition-all" title="Export PNG">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg>
+                    </button>
+                    <button @click="exportDashboard('pdf')" class="w-9 h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center text-white hover:bg-white/30 transition-all" title="Export PDF">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    </button>
+                    <button @click="toggleDarkMode" class="w-9 h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center text-white hover:bg-white/30 transition-all">
+                        <svg x-show="!darkMode" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
+                        <svg x-show="darkMode" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                    </button>
+                    <div class="w-9 h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center text-white cursor-pointer hover:bg-white/30 transition-all" @click="showCreatorPopup = true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto px-6 py-4">
+            <!-- Loading Skeleton -->
+            <template x-if="isLoading">
+                <div class="space-y-4">
+                    <div class="grid grid-cols-4 gap-4">
+                        <template x-for="i in 4">
+                            <div class="h-28 bg-slate-200 rounded-2xl animate-pulse"></div>
+                        </template>
+                    </div>
+                    <div class="grid grid-cols-12 gap-4">
+                        <div class="col-span-8 h-96 bg-slate-200 rounded-2xl animate-pulse"></div>
+                        <div class="col-span-4 h-96 bg-slate-200 rounded-2xl animate-pulse"></div>
+                    </div>
+                    <div class="grid grid-cols-12 gap-4">
+                        <div class="col-span-6 h-56 bg-slate-200 rounded-2xl animate-pulse"></div>
+                        <div class="col-span-6 h-56 bg-slate-200 rounded-2xl animate-pulse"></div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Error Alert -->
+            <template x-if="error && !isLoading">
+                <div class="bg-red-50 border border-red-200 rounded-xl p-3 mb-3 flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <span class="text-sm text-red-700" x-text="error"></span>
+                    <button @click="error = null" class="ml-auto text-red-500 hover:text-red-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+            </template>
+
+            <!-- Dashboard Content -->
+            <template x-if="!isLoading">
+                <div class="space-y-4" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+            <!-- Inflation Alert -->
+            <template x-if="showAlert">
+                <div :class="darkMode ? 'bg-amber-900/30 border-amber-700' : 'bg-amber-50 border-amber-200'" class="border rounded-xl p-3 mb-3 flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-amber-600 flex-shrink-0"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" x2="12" y1="9" y2="13"></line><line x1="12" x2="12.01" y1="17" y2="17"></line></svg>
+                    <div class="flex-1">
+                        <p class="text-xs font-medium text-amber-800">Peringatan: Inflasi Nasional Tinggi</p>
+                        <p class="text-[10px] text-amber-700" x-text="`Inflasi YoY saat ini ${(kpi?.yoy?.value || 0).toFixed(2)}% melebihi threshold ${alertThreshold}%`"></p>
+                    </div>
+                    <button @click="showAlert = false" class="text-amber-600 hover:text-amber-800">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+                    </button>
+                </div>
+            </template>
+
+            <!-- Dashboard Grid Container -->
+            <div class="flex flex-col gap-4">
+                
+                <!-- ROW 1: KPI Cards -->
+                <div class="grid grid-cols-2 md:grid-cols-12 gap-4" style="flex: 0 0 auto;">
+                    <!-- YoY Card -->
+                    <div :class="darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'" class="col-span-2 rounded-2xl shadow-sm border p-4 flex flex-col justify-between" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" style="transition-delay: 0ms">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Inflasi YoY</span>
+                            <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-50">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-blue-600"><path d="M3 3v18h18"></path><path d="m19 9-5 5-4-4-3 3"></path></svg>
+                            </div>
+                        </div>
+                        <div class="flex items-baseline gap-1">
+                            <span :class="'text-2xl font-bold ' + getInflasiColor(kpi?.yoy?.value)" x-text="(kpi?.yoy?.value || 0).toFixed(2) + '%'"></span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <template x-if="kpi?.yoy?.prev !== null">
+                                <span :class="(kpi?.yoy?.value || 0) >= (kpi?.yoy?.prev || 0) ? 'text-red-500' : 'text-emerald-500'" class="text-xs font-medium">
+                                    <span x-text="((kpi?.yoy?.value || 0) - (kpi?.yoy?.prev || 0) >= 0 ? '+' : '-') + Math.abs((kpi?.yoy?.value || 0) - (kpi?.yoy?.prev || 0)).toFixed(2) + '%'"></span>
+                                    <span class="text-[10px] text-slate-400"> dari bulan sebelumnya</span>
+                                </span>
+                            </template>
+                        </div>
+                        <div class="text-[10px] text-slate-400 mt-1">Indonesia • Maret 2026</div>
+                    </div>
+
+                    <!-- MtM Card -->
+                    <div :class="darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'" class="col-span-2 rounded-2xl shadow-sm border p-4 flex flex-col justify-between" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" style="transition-delay: 50ms">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Inflasi MtM</span>
+                            <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-50">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-blue-600"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"></polyline><polyline points="16 17 22 17 22 11"></polyline></svg>
+                            </div>
+                        </div>
+                        <div class="flex items-baseline gap-1">
+                            <span :class="'text-2xl font-bold ' + getInflasiColor(kpi?.mom?.value)" x-text="kpi?.mom?.value?.toFixed(2)"></span>
+                            <span class="text-sm text-slate-400">%</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <template x-if="kpi?.mom?.prev !== null">
+                                <span :class="(kpi?.mom?.value || 0) >= (kpi?.mom?.prev || 0) ? 'text-red-500' : 'text-emerald-500'" class="text-xs font-medium">
+                                    <span x-text="((kpi?.mom?.value || 0) - (kpi?.mom?.prev || 0) >= 0 ? '+' : '-') + Math.abs((kpi?.mom?.value || 0) - (kpi?.mom?.prev || 0)).toFixed(2) + '%'"></span>
+                                    <span class="text-[10px] text-slate-400"> dari bulan sebelumnya</span>
+                                </span>
+                            </template>
+                        </div>
+                        <div class="text-[10px] text-slate-400 mt-1">Indonesia • Maret 2026</div>
+                    </div>
+
+                    <!-- YTD Card -->
+                    <div :class="darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'" class="col-span-2 rounded-2xl shadow-sm border p-4 flex flex-col justify-between" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" style="transition-delay: 100ms">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Inflasi YTD</span>
+                            <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-50">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-blue-600"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+                            </div>
+                        </div>
+                        <div class="flex items-baseline gap-1">
+                            <span :class="'text-2xl font-bold ' + getInflasiColor(kpi?.ytd?.value)" x-text="kpi?.ytd?.value?.toFixed(2)"></span>
+                            <span class="text-sm text-slate-400">%</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <template x-if="kpi?.ytd?.prev !== null">
+                                <span :class="(kpi?.ytd?.value || 0) >= (kpi?.ytd?.prev || 0) ? 'text-red-500' : 'text-emerald-500'" class="text-xs font-medium">
+                                    <span x-text="((kpi?.ytd?.value || 0) - (kpi?.ytd?.prev || 0) >= 0 ? '+' : '-') + Math.abs((kpi?.ytd?.value || 0) - (kpi?.ytd?.prev || 0)).toFixed(2) + '%'"></span>
+                                    <span class="text-[10px] text-slate-400"> dari bulan sebelumnya</span>
+                                </span>
+                            </template>
+                        </div>
+                        <div class="text-[10px] text-slate-400 mt-1">Indonesia • Maret 2026</div>
+                    </div>
+
+                    <!-- Top Komoditas Penyumbang Card -->
+                    <div :class="darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'" class="col-span-6 rounded-2xl shadow-sm border p-4 flex flex-col" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" style="transition-delay: 150ms">
+                        <div class="flex items-center justify-between mb-3">
+                            <div>
+                                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Top Komoditas</span>
+                                <p class="text-[10px] text-slate-400">Kenaikan harga tertinggi per provinsi</p>
+                            </div>
+                            <div class="flex flex-col items-end">
+                                <div class="flex items-center gap-2">
+                                    <div class="text-[10px] text-slate-400">Indonesia • Maret</div>
+                                    <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-50">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-blue-600"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" x2="21" y1="6" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex-1 grid grid-cols-3 gap-3">
+                            <template x-for="item in topKomoditasProvinsi || []">
+                                <div class="flex items-center justify-between p-2 bg-slate-50 rounded-xl">
+                                    <div class="flex flex-col">
+                                        <div class="text-xs font-semibold text-slate-800" x-text="item.komoditas"></div>
+                                        <div class="text-[10px] text-slate-500" x-text="item.provinsi"></div>
+                                    </div>
+                                    <div class="text-sm font-bold" :class="item.change >= 0 ? 'text-red-500' : 'text-emerald-500'" x-text="(item.change >= 0 ? '+' : '') + item.change.toFixed(1) + '%'"></div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ROW 2: Distribusi Spasial -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-4" style="flex: 1 1 auto; min-height: 400px;">
+                    <!-- Distribusi Spasial (9 columns - 3/4 width) -->
+                    <div :class="darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'" class="col-span-12 md:col-span-9 rounded-2xl shadow-sm border p-4 flex flex-col" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" style="transition-delay: 200ms">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 :class="darkMode ? 'text-white' : 'text-slate-800'" class="text-sm font-semibold">Distribusi Spasial</h3>
+                        </div>
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] text-slate-400">Periode:</span>
+                                <select x-model="selectedPeriod" @change="refreshMap" class="text-[10px] bg-slate-50 border border-slate-200 rounded px-2 py-1 text-slate-700">
+                                    <template x-for="period in periodList">
+                                        <option :value="period" x-text="formatPeriod(period)"></option>
+                                    </template>
+                                </select>
+                                <template x-if="mapCategory === 'Pangan'">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[10px] text-slate-400">Komoditas:</span>
+                                        <select x-model="selectedKomoditas" @change="refreshMap" class="text-[10px] bg-slate-50 border border-slate-200 rounded px-2 py-1 text-slate-700">
+                                            <template x-for="kom in komoditasList">
+                                                <option :value="kom" x-text="kom"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="flex gap-1">
+                                <template x-for="t in ['YoY', 'MtM', 'YTD']">
+                                    <button
+                                        @click="setTipeMap(t)"
+                                        :class="tipeMap === t ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'"
+                                        class="px-2 py-0.5 rounded text-[10px] font-semibold transition-all"
+                                        x-text="t">
+                                    </button>
+                                </template>
+                            </div>
+                            <div class="flex gap-1">
+                                <template x-for="cat in ['Inflasi', 'Pangan']">
+                                    <button
+                                        @click="setMapCategory(cat)"
+                                        :class="mapCategory === cat ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'"
+                                        class="px-2 py-0.5 rounded text-[10px] font-semibold transition-all"
+                                        x-text="cat">
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="flex-1 rounded-xl overflow-hidden border border-slate-100 bg-slate-50 relative">
+                            <template x-if="!mapUrl">
+                                <div class="h-full flex items-center justify-center">
+                                    <div class="w-6 h-6 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                                </div>
+                            </template>
+                            <template x-if="mapUrl">
+                                <iframe
+                                    x-ref="mapIframe"
+                                    :src="mapUrl"
+                                    class="map-frame"
+                                    title="Peta Inflasi Indonesia"
+                                    style="width: 100%; height: 100%;">
+                                </iframe>
+                            </template>
+                        </div>
+                    </div>
+                    <!-- Comparison Card (3 columns - 1/4 width) -->
+                    <div :class="darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'" class="col-span-12 md:col-span-3 rounded-2xl shadow-sm border p-4 flex flex-col" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" style="transition-delay: 250ms">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 :class="darkMode ? 'text-white' : 'text-slate-800'" class="text-sm font-semibold">Perbandingan Inflasi</h3>
+                        </div>
+                        <div class="mb-3">
+                            <select x-model="comparisonRegion" @change="loadComparisonData" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-700">
+                                <option value="">Pilih Daerah</option>
+                                <template x-for="prov in provinsiList" :key="prov">
+                                    <option :value="prov" x-text="prov"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="flex-1 space-y-3">
+                            <div class="bg-slate-50 rounded-lg p-3">
+                                <div class="text-[10px] text-slate-500 mb-1">YoY</div>
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-[10px] text-slate-400">Nasional</div>
+                                        <div class="text-sm font-semibold text-blue-600" x-text="(kpi?.yoy?.value || 0).toFixed(2) + '%'"></div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-[10px] text-slate-400" x-text="comparisonRegion || '-'"></div>
+                                        <div class="text-sm font-semibold" :class="getComparisonColor('yoy')" x-text="comparisonRegion && comparisonData?.yoy ? comparisonData.yoy.toFixed(2) + '%' : '-'"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-3">
+                                <div class="text-[10px] text-slate-500 mb-1">MtM</div>
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-[10px] text-slate-400">Nasional</div>
+                                        <div class="text-sm font-semibold text-blue-600" x-text="(kpi?.mom?.value || 0).toFixed(2) + '%'"></div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-[10px] text-slate-400" x-text="comparisonRegion || '-'"></div>
+                                        <div class="text-sm font-semibold" :class="getComparisonColor('mom')" x-text="comparisonRegion && comparisonData?.mom ? comparisonData.mom.toFixed(2) + '%' : '-'"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-3">
+                                <div class="text-[10px] text-slate-500 mb-1">YTD</div>
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-[10px] text-slate-400">Nasional</div>
+                                        <div class="text-sm font-semibold text-blue-600" x-text="(kpi?.ytd?.value || 0).toFixed(2) + '%'"></div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-[10px] text-slate-400" x-text="comparisonRegion || '-'"></div>
+                                        <div class="text-sm font-semibold" :class="getComparisonColor('ytd')" x-text="comparisonRegion && comparisonData?.ytd ? comparisonData.ytd.toFixed(2) + '%' : '-'"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-3 border-t border-slate-100 text-center">
+                            <div class="text-[10px] text-slate-400" x-text="formatPeriod(selectedPeriod)"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ROW 3: Reports Overview -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-4" style="flex: 0 0 auto; min-height: 180px;">
+                    <!-- Left: Total Pergerakan Inflasi (8 columns) -->
+                    <div :class="darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'" class="col-span-12 md:col-span-8 rounded-2xl shadow-sm border p-4 flex flex-col" style="height: 400px;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" style="transition-delay: 300ms">
+                        <div class="flex items-center justify-between mb-3">
+                            <div>
+                                <h3 :class="darkMode ? 'text-white' : 'text-slate-800'" class="text-sm font-semibold">Total Pergerakan Inflasi</h3>
+                                <p class="text-xs text-slate-400 mt-0.5">Sumber: BPS 2024–2026</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <div class="flex gap-1 bg-slate-100 rounded-lg p-1">
+                                    <template x-for="t in ['YoY', 'MtM', 'YTD']">
+                                        <button
+                                            @click="setTipeTren(t)"
+                                            :class="tipeTren === t ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'"
+                                            class="px-2 py-0.5 rounded text-[10px] font-semibold transition-all"
+                                            x-text="t">
+                                        </button>
+                                    </template>
+                                </div>
+                                <button @click="downloadChart('trenChart')" class="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-50 hover:bg-blue-100 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-blue-600"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mb-3 relative" x-data="{ showDropdown: false }">
+                            <div class="flex items-center gap-2">
+                                <div class="flex-1 relative">
+                                    <input
+                                        type="text"
+                                        x-model="searchQuery"
+                                        @focus="showDropdown = true"
+                                        @blur="setTimeout(() => showDropdown = false, 200)"
+                                        placeholder="Cari provinsi..."
+                                        class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <div x-show="showDropdown && searchQuery" class="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                                        <template x-for="prov in filteredProvinsiList" :key="prov">
+                                            <div
+                                                @click="addProvToChart(prov); searchQuery = ''; showDropdown = false"
+                                                class="px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 cursor-pointer"
+                                                x-text="prov">
+                                            </div>
+                                        </template>
+                                        <div x-show="filteredProvinsiList.length === 0" class="px-3 py-2 text-xs text-slate-400">
+                                            Tidak ada provinsi ditemukan
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-1 mt-2" x-show="selectedProvs.length > 0">
+                                <template x-for="(prov, idx) in selectedProvs" :key="prov">
+                                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-500 rounded-full text-[10px] font-medium">
+                                        <span x-text="prov"></span>
+                                        <button @click="removeProvFromChart(idx)" class="hover:text-blue-900">&times;</button>
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="flex-1 relative min-h-0">
+                            <canvas id="trenChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Right: Two Stacked Cards (4 columns) -->
+                    <div class="col-span-12 md:col-span-4 flex flex-col gap-4">
+                        <!-- Top Komoditas Penyumbang Card -->
+                        <div :class="darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'" class="rounded-2xl shadow-sm border p-4 flex flex-col" style="height: 200px;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" style="transition-delay: 350ms">
+                            <h3 :class="darkMode ? 'text-white' : 'text-slate-800'" class="text-sm font-semibold mb-2">Heatmap Harga Pangan</h3>
+                            <div class="flex-1 overflow-auto min-h-0 relative">
+                                <table class="w-full text-xs border-collapse">
+                                    <thead class="bg-slate-50 sticky top-0 z-20">
+                                        <tr>
+                                            <th class="px-2 py-1 text-left font-semibold text-slate-600 border-r border-slate-200 text-[10px] sticky left-0 bg-slate-50 z-30">Komoditas</th>
+                                            <template x-for="month in heatmapData?.months || []">
+                                                <th class="px-2 py-1 text-center font-semibold text-slate-600 min-w-[50px] text-[10px]" x-text="month"></th>
+                                            </template>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="(row, komoditas) in heatmapData?.data || {}">
+                                            <tr>
+                                                <td class="px-2 py-1 text-slate-400 font-medium border-r border-slate-200 sticky left-0 bg-white text-[10px] z-10" x-text="komoditas"></td>
+                                                <template x-for="(price, idx) in row">
+                                                    <td class="px-1 py-1 text-center min-w-[50px]" :style="getHeatmapColor(price, heatmapData?.changes?.[komoditas]?.[idx])">
+                                                        <span class="text-[9px]" x-text="formatPrice(price)"></span>
+                                                    </td>
+                                                </template>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Top 3 Inflasi Nasional Card -->
+                        <div :class="darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'" class="rounded-2xl shadow-sm border p-4 flex-1" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" style="transition-delay: 400ms">
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 :class="darkMode ? 'text-white' : 'text-slate-800'" class="text-sm font-semibold">Top 3 Inflasi Nasional</h3>
+                                <div class="flex gap-1 bg-slate-100 rounded-lg p-1">
+                                    <template x-for="t in ['YoY', 'MtM', 'YTD']">
+                                        <button
+                                            @click="topInflasiType = t; loadTopInflasiData()"
+                                            :class="topInflasiType === t ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'"
+                                            class="px-2 py-0.5 rounded text-[10px] font-semibold transition-all"
+                                            x-text="t">
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <template x-for="(item, idx) in topInflasiData || []" :key="idx">
+                                    <div class="flex items-center justify-between p-2 bg-slate-50 rounded-xl">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs font-bold text-slate-400" x-text="idx + 1"></span>
+                                            <span class="text-xs font-semibold text-slate-700" x-text="item.Provinsi"></span>
+                                        </div>
+                                        <span :class="item.value > 0 ? 'text-red-500' : 'text-emerald-500'" class="text-xs font-bold" x-text="(item.value > 0 ? '+' : '') + item.value.toFixed(2) + '%'"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            </template>
+        </main>
+
+        <!-- Creator Popup -->
+        <div x-show="showCreatorPopup" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.self="showCreatorPopup = false">
+            <div :class="darkMode ? 'bg-slate-800' : 'bg-white'" class="rounded-2xl shadow-xl p-6 w-80">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-2xl font-bold">RR</div>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800">Rohis Rachman</h3>
+                        <p class="text-sm text-slate-500">Data enthusiast</p>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <a href="https://www.linkedin.com/in/rohis-rachman-43598b213/" target="_blank" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2 flex items-center justify-center gap-2 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                        <span class="text-xs font-semibold">LinkedIn</span>
+                    </a>
+                    <a href="https://www.instagram.com/rohisrachman/" target="_blank" class="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg py-2 flex items-center justify-center gap-2 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                        <span class="text-xs font-semibold">Instagram</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script>
+// Initialize Chart.js after Alpine.js loads and data is ready
+document.addEventListener('alpine:init', () => {
+    console.log('Alpine initialized');
+    
+    // Initialize Line Chart when canvas is available
+    let chartInitialized = false;
+    
+    const initChart = () => {
+        if (chartInitialized) return true;
+        
+        const ctx = document.getElementById('trenChart');
+        if (ctx) {
+            window.trenChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: { size: 11 },
+                                usePointStyle: true,
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleFont: { size: 12 },
+                            bodyFont: { size: 11 },
+                            callbacks: {
+                                title: function(context) {
+                                    return context[0].label;
+                                },
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    const change = value.toFixed(2) + '%';
+                                    const prov = label;
+                                    return `${prov}: ${change}`;
+                                },
+                                afterBody: function(context) {
+                                    const data = context[0];
+                                    const period = data.label;
+                                    return `Periode: ${period}\nTipe: ${window.Alpine.store('app').tipeTren}`;
+                                }
+                            }
+                        },
+                        beforeDraw: function(chart) {
+                            const ctx = chart.ctx;
+                            const yAxis = chart.scales.y;
+                            const xAxis = chart.scales.x;
+                            
+                            const y1 = yAxis.getPixelForValue(3.5);
+                            const y2 = yAxis.getPixelForValue(1.5);
+                            
+                            ctx.save();
+                            ctx.fillStyle = 'rgba(148, 163, 184, 0.1)';
+                            ctx.fillRect(xAxis.left, y1, xAxis.right - xAxis.left, y2 - y1);
+                            ctx.restore();
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: { size: 10 }
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: '#e2e8f0'
+                            },
+                            ticks: {
+                                font: { size: 10 },
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    },
+                    elements: {
+                        line: {
+                            tension: 0.4,
+                            borderWidth: 2
+                        },
+                        point: {
+                            radius: 3,
+                            hoverRadius: 5
+                        }
+                    }
+                }
+            });
+            console.log('Chart initialized:', window.trenChart);
+            chartInitialized = true;
+            return true;
+        }
+        return false;
+    };
+    
+    // Try to initialize chart periodically until successful
+    let attempts = 0;
+    const maxAttempts = 20;
+    
+    const tryInit = () => {
+        if (attempts >= maxAttempts) {
+            console.error('Chart canvas not found after max attempts');
+            return;
+        }
+        
+        if (initChart()) {
+            return;
+        }
+        
+        attempts++;
+        setTimeout(tryInit, 200);
+    };
+    
+    // Start trying to initialize
+    setTimeout(tryInit, 100);
+});
+</script>
+{% endblock %}

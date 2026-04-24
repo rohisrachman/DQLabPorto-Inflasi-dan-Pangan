@@ -13,10 +13,9 @@ from functools import lru_cache
 app = Flask(__name__, template_folder='backend/templates')
 CORS(app)
 
-# Configure caching
+# Configure caching - use SimpleCache for serverless environments
 cache_config = {
-    'CACHE_TYPE': 'FileSystemCache',
-    'CACHE_DIR': 'cache',
+    'CACHE_TYPE': 'SimpleCache',
     'CACHE_DEFAULT_TIMEOUT': 600  # 10 minutes
 }
 cache = Cache(app, config=cache_config)

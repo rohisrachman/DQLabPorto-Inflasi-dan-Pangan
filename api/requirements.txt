@@ -1,0 +1,8 @@
+flask
+flask-cors
+flask-caching
+pandas
+numpy
+folium
+openpyxl
+requests

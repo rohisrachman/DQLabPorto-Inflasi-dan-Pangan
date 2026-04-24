@@ -10,7 +10,7 @@ import os
 import re
 from functools import lru_cache
 
-app = Flask(__name__, template_folder='templates')
+app = Flask(__name__, template_folder='backend/templates')
 CORS(app)
 
 # Configure caching
@@ -30,7 +30,7 @@ def index():
 @app.route("/data/<path:filename>")
 def serve_data(filename):
     """Serve files from the Data directory with cache headers."""
-    data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'Data')
+    data_dir = os.path.join(os.path.dirname(__file__), 'Data')
     response = send_from_directory(data_dir, filename)
     response.headers['Cache-Control'] = 'public, max-age=3600'  # 1 hour cache
     return response
@@ -60,9 +60,9 @@ def api_docs():
         "version": "1.1.0"
     })
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
-PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
-INFLASI_FILE = os.path.join(PROJECT_ROOT, "BPS_Inflasi_WideFormat_Datetime.xlsx")
+DATA_DIR = os.path.join(os.path.dirname(__file__), "backend/data")
+PROJECT_ROOT = os.path.dirname(__file__)
+INFLASI_FILE = os.path.join(DATA_DIR, "BPS_Inflasi_WideFormat_Datetime.xlsx")
 PIHPS_FILE = os.path.join(DATA_DIR, "PIHPS_Provinsi_WideFormat.csv")
 GEOJSON_FILE = os.path.join(DATA_DIR, "indonesia_provinces.geojson")
 

@@ -1,0 +1,7 @@
+[project]
+name = "dqlab-porto"
+version = "1.0.0"
+description = "SANTAI - Sistem Analisis Inflasi"
+
+[project.scripts]
+app = "wsgi:app"

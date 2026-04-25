@@ -256,12 +256,15 @@
                     
                     const ctx = document.getElementById('trenChart');
                     if (!ctx) {
-                        console.error('Chart canvas element not found');
+                        console.warn('Chart canvas not found, retrying...');
+                        // Retry after a short delay
+                        setTimeout(() => this.initChart(), 200);
                         return;
                     }
                     
                     if (typeof Chart === 'undefined') {
-                        console.error('Chart.js not loaded');
+                        console.warn('Chart.js not loaded, retrying...');
+                        setTimeout(() => this.initChart(), 200);
                         return;
                     }
                     

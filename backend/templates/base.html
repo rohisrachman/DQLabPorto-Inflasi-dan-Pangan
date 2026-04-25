@@ -459,6 +459,25 @@
                     this.trenData = await this.fetchAPI(`/tren-inflasi?provinsi=${provs}&tipe=${this.tipeTren}`);
                     console.log('Tren data loaded:', this.trenData);
                     
+                    // Wait for chart to be initialized before updating
+                    const waitForChart = () => {
+                        return new Promise((resolve) => {
+                            if (window.trenChart) {
+                                resolve();
+                            } else {
+                                const checkInterval = setInterval(() => {
+                                    if (window.trenChart) {
+                                        clearInterval(checkInterval);
+                                        resolve();
+                                    }
+                                }, 100);
+                            }
+                        });
+                    };
+                    
+                    await waitForChart();
+                    this.updateChart();
+                    
                     // Filter by date range if specified
                     if (this.dateRangeStart || this.dateRangeEnd) {
                         this.trenData = this.trenData.filter(d => {

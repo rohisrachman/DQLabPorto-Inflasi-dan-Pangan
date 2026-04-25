@@ -11,5 +11,12 @@
       "src": "/(.*)",
       "dest": "api/index.py"
     }
+  ],
+  "includeFiles": [
+    "backend/data/**",
+    "Data/**",
+    "*.xlsx",
+    "*.csv",
+    "*.geojson"
   ]
 }

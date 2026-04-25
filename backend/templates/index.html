@@ -469,6 +469,22 @@
 document.addEventListener('alpine:init', () => {
     console.log('Alpine initialized');
     
+    // Wait for Chart.js to be loaded
+    const waitForChartJS = () => {
+        return new Promise((resolve) => {
+            if (typeof Chart !== 'undefined') {
+                resolve();
+            } else {
+                const checkInterval = setInterval(() => {
+                    if (typeof Chart !== 'undefined') {
+                        clearInterval(checkInterval);
+                        resolve();
+                    }
+                }, 100);
+            }
+        });
+    };
+    
     // Initialize Line Chart when canvas is available
     let chartInitialized = false;
     
@@ -476,7 +492,17 @@ document.addEventListener('alpine:init', () => {
         if (chartInitialized) return true;
         
         const ctx = document.getElementById('trenChart');
-        if (ctx) {
+        if (!ctx) {
+            console.error('Chart canvas element not found');
+            return false;
+        }
+        
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js not loaded');
+            return false;
+        }
+        
+        try {
             window.trenChart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -570,26 +596,30 @@ document.addEventListener('alpine:init', () => {
             console.log('Chart initialized:', window.trenChart);
             chartInitialized = true;
             return true;
+        } catch (error) {
+            console.error('Error initializing chart:', error);
+            return false;
         }
-        return false;
     };
     
     // Try to initialize chart periodically until successful
     let attempts = 0;
-    const maxAttempts = 20;
+    const maxAttempts = 30;
     
-    const tryInit = () => {
+    const tryInit = async () => {
         if (attempts >= maxAttempts) {
             console.error('Chart canvas not found after max attempts');
             return;
         }
+        
+        await waitForChartJS();
         
         if (initChart()) {
             return;
         }
         
         attempts++;
-        setTimeout(tryInit, 200);
+        setTimeout(tryInit, 300);
     };
     
     // Start trying to initialize

@@ -254,17 +254,27 @@
                 initChart() {
                     if (window.trenChart) return;
                     
-                    const ctx = document.getElementById('trenChart');
-                    if (!ctx) {
-                        console.warn('Chart canvas not found, retrying...');
-                        // Retry after a short delay
+                    if (typeof Chart === 'undefined') {
+                        console.warn('Chart.js not loaded, retrying...');
                         setTimeout(() => this.initChart(), 200);
                         return;
                     }
                     
-                    if (typeof Chart === 'undefined') {
-                        console.warn('Chart.js not loaded, retrying...');
-                        setTimeout(() => this.initChart(), 200);
+                    const ctx = document.getElementById('trenChart');
+                    if (!ctx) {
+                        console.warn('Chart canvas not found, using MutationObserver...');
+                        // Use MutationObserver to wait for canvas element
+                        const observer = new MutationObserver((mutations, obs) => {
+                            const canvas = document.getElementById('trenChart');
+                            if (canvas) {
+                                obs.disconnect();
+                                this.initChart();
+                            }
+                        });
+                        observer.observe(document.body, {
+                            childList: true,
+                            subtree: true
+                        });
                         return;
                     }
                     

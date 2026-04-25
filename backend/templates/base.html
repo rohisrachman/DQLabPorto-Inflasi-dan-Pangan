@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SANTAI - Sistem Analisis Inflasi</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
@@ -42,11 +41,10 @@
         }
         [x-cloak] { display: none !important; }
     </style>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="bg-slate-50" x-data="app()" x-init="init()">
-    {% block content %}{% endblock %}
-
-    <script>
+<body class="bg-slate-50">
+<script>
         function app() {
             return {
                 provinsiList: [],
@@ -74,11 +72,11 @@
                 darkMode: localStorage.getItem('darkMode') === 'true',
                 error: null,
                 debounceTimer: null,
-                viewMode: 'chart', // 'chart' or 'table'
+                viewMode: 'chart',
                 dateRangeStart: '',
                 dateRangeEnd: '',
                 searchQuery: '',
-                alertThreshold: 5, // Alert if inflation exceeds this percentage
+                alertThreshold: 5,
                 showAlert: false,
                 favoriteProvs: [],
                 regionalInflasi: [],
@@ -100,7 +98,6 @@
                     } else {
                         this.favoriteProvs.push(prov);
                     }
-                    // Save to localStorage
                     localStorage.setItem('favoriteProvs', JSON.stringify(this.favoriteProvs));
                 },
 
@@ -133,7 +130,6 @@
                     const yoy = Math.abs(this.kpi.yoy?.value || 0);
                     const mom = Math.abs(this.kpi.mom?.value || 0);
                     const volatility = Math.abs(yoy - mom);
-                    // Stability score: 100 - (volatility * 20) - (yoy * 5)
                     let score = 100 - (volatility * 20) - (yoy * 5);
                     score = Math.max(0, Math.min(100, score));
                     
@@ -150,8 +146,6 @@
                 getHealthIndexScore() {
                     if (!this.kpi || !this.kpi.yoy) return 0;
                     const yoy = Math.abs(this.kpi.yoy.value || 0);
-                    // Score: 100 - (yoy * 10), min 0, max 100
-                    // <3% = 70-100, 3-5% = 50-70, >5% = 0-50
                     let score = 100 - (yoy * 10);
                     return Math.max(0, Math.min(100, score));
                 },
@@ -173,7 +167,6 @@
                 },
 
                 getMonthlyStatus() {
-                    // Simulate monthly status based on trend data
                     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
                     return months.map((month, i) => {
                         const status = i % 3 === 0 ? 'Normal' : i % 3 === 1 ? 'Waspada' : 'Stabil';
@@ -215,196 +208,12 @@
                     document.body.removeChild(link);
                 },
 
-                async init() {
-                    this.showCreatorPopup = false;
-                    // Initialize dark mode from localStorage
-                    if (localStorage.getItem('darkMode') === 'true') {
-                        this.darkMode = true;
-                        document.documentElement.classList.add('dark');
-                    }
-                    
-                    // Set a timeout to force loading complete after 10 seconds
-                    const loadingTimeout = setTimeout(() => {
-                        console.warn('Loading timeout reached, forcing isLoading = false');
-                        this.isLoading = false;
-                    }, 10000);
-                    
-                    try {
-                        console.log('Starting dashboard initialization...');
-                        this.loadFavorites();
-                        console.log('Loading provinsi list...');
-                        await this.loadProvinsiList();
-                        console.log('Loading KPI...');
-                        await this.loadKPI();
-                        console.log('Loading tren inflasi...');
-                        await this.loadTrenInflasi();
-                        console.log('Loading komoditas list...');
-                        await this.loadKomoditasList();
-                        console.log('Loading harga summary...');
-                        await this.loadHargaSummary();
-                        console.log('Loading top inflasi...');
-                        await this.loadTopInflasi();
-                        console.log('Loading period list...');
-                        await this.loadPeriodList();
-                        console.log('Loading regional inflasi...');
-                        await this.loadRegionalInflasi();
-                        console.log('Loading commodity range...');
-                        await this.loadCommodityRange();
-                        console.log('Loading price index provinsi...');
-                        await this.loadPriceIndexProvinsi();
-                        console.log('Loading top komoditas provinsi...');
-                        await this.loadTopKomoditasProvinsi();
-                        console.log('Loading heatmap data...');
-                        await this.loadHeatmapData();
-                        console.log('Loading top inflasi data...');
-                        await this.loadTopInflasiData();
-                        console.log('All data loaded successfully');
-                        this.lastUpdated = new Date().toLocaleString('id-ID', {
-                            day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                        });
-                        this.isLoading = false;
-                        clearTimeout(loadingTimeout);
-                        // Initialize chart after loading is complete
-                        this.$nextTick(() => {
-                            setTimeout(() => this.initChart(), 100);
-                        });
-                    } catch (err) {
-                        console.error('Initialization error:', err);
-                        console.error('Error stack:', err.stack);
-                        console.error('Error message:', err.message);
-                        this.error = 'Gagal memuat dashboard. Silakan refresh halaman.';
-                        this.isLoading = false;
-                        clearTimeout(loadingTimeout);
-                    }
-                },
-                initChart() {
-                    if (window.trenChart) {
-                        console.log('Chart already initialized');
-                        return;
-                    }
-                    
-                    console.log('initChart called, checking conditions...');
-                    
-                    if (typeof Chart === 'undefined' || !Chart || !Chart.prototype) {
-                        console.warn('Chart.js not fully loaded, retrying...');
-                        setTimeout(() => this.initChart(), 500);
-                        return;
-                    }
-                    
-                    const ctx = document.getElementById('trenChart');
-                    console.log('Canvas element:', ctx);
-                    
-                    if (!ctx) {
-                        console.warn('Chart canvas not found, retrying...');
-                        // Simple retry with longer delay
-                        setTimeout(() => this.initChart(), 500);
-                        return;
-                    }
-                    
-                    try {
-                        console.log('Initializing chart with canvas:', ctx);
-                        const initialData = {
-                            labels: [],
-                            datasets: []
-                        };
-                        console.log('Initial data structure:', initialData);
-                        window.trenChart = new Chart(ctx, {
-                            type: 'line',
-                            data: initialData,
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                plugins: {
-                                    legend: {
-                                        position: 'bottom',
-                                        labels: {
-                                            font: { size: 11 },
-                                            usePointStyle: true,
-                                            padding: 15
-                                        }
-                                    },
-                                    tooltip: {
-                                        mode: 'index',
-                                        intersect: false,
-                                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                        padding: 12,
-                                        titleFont: { size: 12 },
-                                        bodyFont: { size: 11 },
-                                        callbacks: {
-                                            title: function(context) {
-                                                return context[0].label;
-                                            },
-                                            label: function(context) {
-                                                const label = context.dataset.label || '';
-                                                const value = context.parsed.y;
-                                                const change = value.toFixed(2) + '%';
-                                                const prov = label;
-                                                return `${prov}: ${change}`;
-                                            },
-                                            afterBody: function(context) {
-                                                const data = context[0];
-                                                const period = data.label;
-                                                return `Periode: ${period}\nTipe: ${window.Alpine.store('app').tipeTren}`;
-                                            }
-                                        }
-                                    },
-                                    beforeDraw: function(chart) {
-                                        const ctx = chart.ctx;
-                                        const yAxis = chart.scales.y;
-                                        const xAxis = chart.scales.x;
-                                        
-                                        const y1 = yAxis.getPixelForValue(3.5);
-                                        const y2 = yAxis.getPixelForValue(1.5);
-                                        
-                                        ctx.save();
-                                        ctx.fillStyle = 'rgba(148, 163, 184, 0.1)';
-                                        ctx.fillRect(xAxis.left, y1, xAxis.right - xAxis.left, y2 - y1);
-                                        ctx.restore();
-                                    }
-                                },
-                                scales: {
-                                    x: {
-                                        grid: {
-                                            display: false
-                                        },
-                                        ticks: {
-                                            font: { size: 10 }
-                                        }
-                                    },
-                                    y: {
-                                        grid: {
-                                            color: '#e2e8f0'
-                                        },
-                                        ticks: {
-                                            font: { size: 10 },
-                                            callback: function(value) {
-                                                return value + '%';
-                                            }
-                                        }
-                                    }
-                                },
-                                elements: {
-                                    line: {
-                                        tension: 0.4,
-                                        borderWidth: 2
-                                    },
-                                    point: {
-                                        radius: 3,
-                                        hoverRadius: 5
-                                    }
-                                }
-                            }
-                        });
-                        console.log('Chart initialized successfully:', window.trenChart);
-                    } catch (error) {
-                        console.error('Error initializing chart:', error);
-                    }
-                },
                 toggleDarkMode() {
                     this.darkMode = !this.darkMode;
                     localStorage.setItem('darkMode', this.darkMode);
                     document.documentElement.classList.toggle('dark', this.darkMode);
                 },
+
                 async exportDashboard(format) {
                     const dashboard = document.querySelector('main');
                     if (!dashboard) return;
@@ -439,6 +248,7 @@
                         this.error = 'Gagal mengekspor dashboard';
                     }
                 },
+
                 async fetchAPI(path) {
                     try {
                         const res = await fetch(`/api${path}`);
@@ -457,7 +267,6 @@
 
                 async loadKPI() {
                     this.kpi = await this.fetchAPI('/kpi');
-                    // Check if inflation exceeds threshold
                     if (this.kpi && this.kpi.yoy && this.kpi.yoy.value > this.alertThreshold) {
                         this.showAlert = true;
                     }
@@ -477,102 +286,6 @@
 
                 async loadTopKomoditasProvinsi() {
                     this.topKomoditasProvinsi = await this.fetchAPI('/top-komoditas-provinsi');
-                },
-
-                async loadTrenInflasi() {
-                    const provs = this.selectedProvs.join(',');
-                    console.log('Loading tren inflasi:', provs, this.tipeTren);
-                    this.trenData = await this.fetchAPI(`/tren-inflasi?provinsi=${provs}&tipe=${this.tipeTren}`);
-                    console.log('Tren data loaded:', this.trenData);
-                    
-                    // Wait for chart to be initialized before updating
-                    const waitForChart = () => {
-                        return new Promise((resolve) => {
-                            if (window.trenChart) {
-                                resolve();
-                            } else {
-                                const checkInterval = setInterval(() => {
-                                    if (window.trenChart) {
-                                        clearInterval(checkInterval);
-                                        resolve();
-                                    }
-                                }, 100);
-                            }
-                        });
-                    };
-                    
-                    await waitForChart();
-                    this.updateChart();
-                    
-                    // Filter by date range if specified
-                    if (this.dateRangeStart || this.dateRangeEnd) {
-                        this.trenData = this.trenData.filter(d => {
-                            if (this.dateRangeStart && d.date < this.dateRangeStart) return false;
-                            if (this.dateRangeEnd && d.date > this.dateRangeEnd) return false;
-                            return true;
-                        });
-                    }
-                    
-                    setTimeout(() => {
-                        this.updateChart();
-                    }, 100);
-                },
-
-                updateChart() {
-                    console.log('updateChart called, window.trenChart:', window.trenChart, 'trenData:', this.trenData);
-                    if (!window.trenChart) {
-                        console.error('Chart not initialized, retrying...');
-                        // Retry after a short delay
-                        setTimeout(() => {
-                            if (window.trenChart) {
-                                this.updateChart();
-                            }
-                        }, 300);
-                        return;
-                    }
-                    if (!this.trenData || this.trenData.length === 0) {
-                        console.error('No data available');
-                        return;
-                    }
-                    
-                    const colors = ['#4269D0', '#EFB118', '#FF725C', '#6CC5B0', '#8b5cf6'];
-                    
-                    // Merge data from all provinces
-                    const merged = {};
-                    this.trenData.forEach(point => {
-                        if (!merged[point.date]) merged[point.date] = { date: point.date };
-                        merged[point.date][point.provinsi] = point.value;
-                    });
-
-                    const chartData = Object.values(merged).sort((a, b) => a.date.localeCompare(b.date));
-                    const labels = chartData.map(d => {
-                        const [y, m] = d.date.split('-');
-                        const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-                        return `${months[parseInt(m) - 1]} ${y}`;
-                    });
-
-                    const datasets = this.selectedProvs.map((prov, i) => {
-                        const dataValues = chartData.map(d => d[prov] || null);
-                        console.log(`Data for ${prov}:`, dataValues);
-                        return {
-                            label: prov === 'INDONESIA' ? '🇮🇩 Nasional' : prov.replace('DI ', '').replace('DKI ', ''),
-                            data: dataValues,
-                            borderColor: colors[i],
-                            backgroundColor: colors[i] + '20',
-                            fill: false,
-                            tension: 0.4,
-                            spanGaps: true
-                        };
-                    });
-
-                    console.log('Updating chart with labels:', labels, 'datasets:', datasets);
-                    if (!window.trenChart.data) {
-                        console.error('Chart data is undefined');
-                        return;
-                    }
-                    window.trenChart.data.labels = labels;
-                    window.trenChart.data.datasets = datasets;
-                    window.trenChart.update();
                 },
 
                 async loadKomoditasList() {
@@ -665,7 +378,6 @@
                 getHeatmapColor(price, change) {
                     if (change === undefined || change === null) return 'background-color: #f1f5f9; color: #64748b;';
                     
-                    // Color based on price change: green (decrease), yellow (stable), red (increase)
                     if (change < -0.5) {
                         return 'background-color: #22c55e; color: white;';
                     } else if (change > 0.5) {
@@ -745,9 +457,228 @@
 
                 refreshMap() {
                     this.$refs.mapIframe.src = this.mapUrl;
+                },
+
+                async loadTrenInflasi() {
+                    const provs = this.selectedProvs.join(',');
+                    console.log('Loading tren inflasi:', provs, this.tipeTren);
+                    this.trenData = await this.fetchAPI(`/tren-inflasi?provinsi=${provs}&tipe=${this.tipeTren}`);
+                    console.log('Tren data loaded:', this.trenData);
+                    
+                    // Update chart if it exists
+                    if (window.trenChart) {
+                        this.updateChart();
+                    }
+                },
+
+                updateChart() {
+                    console.log('updateChart called, window.trenChart:', window.trenChart, 'trenData:', this.trenData);
+                    if (!window.trenChart || !this.trenData || this.trenData.length === 0) {
+                        console.warn('Chart not ready or no data');
+                        return;
+                    }
+                    
+                    const colors = ['#4269D0', '#EFB118', '#FF725C', '#6CC5B0', '#8b5cf6'];
+                    
+                    const merged = {};
+                    this.trenData.forEach(point => {
+                        if (!merged[point.date]) merged[point.date] = { date: point.date };
+                        merged[point.date][point.provinsi] = point.value;
+                    });
+
+                    const chartData = Object.values(merged).sort((a, b) => a.date.localeCompare(b.date));
+                    const labels = chartData.map(d => {
+                        const [y, m] = d.date.split('-');
+                        const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+                        return `${months[parseInt(m) - 1]} ${y}`;
+                    });
+
+                    const datasets = this.selectedProvs.map((prov, i) => {
+                        const dataValues = chartData.map(d => d[prov] || null);
+                        return {
+                            label: prov === 'INDONESIA' ? '🇮🇩 Nasional' : prov.replace('DI ', '').replace('DKI ', ''),
+                            data: dataValues,
+                            borderColor: colors[i],
+                            backgroundColor: colors[i] + '20',
+                            fill: false,
+                            tension: 0.4,
+                            spanGaps: true
+                        };
+                    });
+
+                    window.trenChart.data = JSON.parse(JSON.stringify({ labels, datasets }));
+                    window.trenChart.update();
+                },
+
+                async init() {
+                    this.showCreatorPopup = false;
+                    if (localStorage.getItem('darkMode') === 'true') {
+                        this.darkMode = true;
+                        document.documentElement.classList.add('dark');
+                    }
+                    
+                    try {
+                        console.log('Starting dashboard initialization...');
+                        this.loadFavorites();
+                        // Load essential data only
+                        await this.loadProvinsiList();
+                        await this.loadKPI();
+                        await this.loadPeriodList();
+                        await this.loadKomoditasList();
+                        
+                        console.log('Essential data loaded');
+                        this.lastUpdated = new Date().toLocaleString('id-ID', {
+                            day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                        });
+                        this.isLoading = false;
+                        
+                        // Lazy load chart data after UI is rendered
+                        setTimeout(() => this.loadChartData(), 500);
+                    } catch (err) {
+                        console.error('Initialization error:', err);
+                        this.error = 'Gagal memuat dashboard. Silakan refresh halaman.';
+                        this.isLoading = false;
+                    }
+                },
+
+                async loadChartData() {
+                    console.log('Loading chart data...');
+                    try {
+                        // Initialize empty chart first
+                        this.initChart();
+                        
+                        // Wait for chart to be ready
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                        
+                        await this.loadTrenInflasi();
+                        await this.loadHargaSummary();
+                        await this.loadTopInflasi();
+                        await this.loadRegionalInflasi();
+                        await this.loadCommodityRange();
+                        await this.loadPriceIndexProvinsi();
+                        await this.loadTopKomoditasProvinsi();
+                        await this.loadHeatmapData();
+                        await this.loadTopInflasiData();
+                        console.log('Chart data loaded');
+                        // Update chart with data after ensuring chart is ready
+                        if (window.trenChart && window.trenChart.canvas) {
+                            this.updateChart();
+                        }
+                    } catch (err) {
+                        console.error('Error loading chart data:', err);
+                        console.error('Error stack:', err.stack);
+                        console.error('Error message:', err.message);
+                    }
+                },
+
+                initChart() {
+                    if (window.trenChart && window.trenChart.data) {
+                        console.log('Chart already initialized');
+                        return;
+                    }
+                    
+                    const ctx = document.getElementById('trenChart');
+                    console.log('initChart called, ctx:', ctx, 'Chart:', typeof Chart);
+                    if (!ctx) {
+                        console.error('Canvas element not found');
+                        return;
+                    }
+                    if (typeof Chart === 'undefined') {
+                        console.error('Chart.js is not loaded');
+                        return;
+                    }
+                    
+                    try {
+                        const chartConfig = {
+                            type: 'line',
+                            data: { labels: [], datasets: [] },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom',
+                                        labels: {
+                                            font: { size: 11 },
+                                            usePointStyle: true,
+                                            padding: 15
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    x: {
+                                        grid: { display: false },
+                                        ticks: { font: { size: 10 } }
+                                    },
+                                    y: {
+                                        grid: { color: '#e2e8f0' },
+                                        ticks: {
+                                            font: { size: 10 }
+                                        }
+                                    }
+                                },
+                                elements: {
+                                    line: { tension: 0.4, borderWidth: 2 },
+                                    point: { radius: 3, hoverRadius: 5 }
+                                }
+                            }
+                        };
+                        
+                        const chartInstance = new Chart(ctx, chartConfig);
+                        window.trenChart = chartInstance;
+                        console.log('Chart initialized, window.trenChart:', window.trenChart);
+                    } catch (error) {
+                        console.error('Error initializing chart:', error);
+                        console.error('Error stack:', error.stack);
+                    }
+                },
+
+                updateChart() {
+                    console.log('updateChart called, window.trenChart:', window.trenChart, 'trenData:', this.trenData);
+                    if (!window.trenChart || !this.trenData || this.trenData.length === 0) {
+                        console.warn('Chart not ready or no data');
+                        return;
+                    }
+                    
+                    const colors = ['#4269D0', '#EFB118', '#FF725C', '#6CC5B0', '#8b5cf6'];
+                    
+                    const merged = {};
+                    this.trenData.forEach(point => {
+                        if (!merged[point.date]) merged[point.date] = { date: point.date };
+                        merged[point.date][point.provinsi] = point.value;
+                    });
+
+                    const chartData = Object.values(merged).sort((a, b) => a.date.localeCompare(b.date));
+                    const labels = chartData.map(d => {
+                        const [y, m] = d.date.split('-');
+                        const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+                        return `${months[parseInt(m) - 1]} ${y}`;
+                    });
+
+                    const datasets = this.selectedProvs.map((prov, i) => {
+                        const dataValues = chartData.map(d => d[prov] || null);
+                        return {
+                            label: prov === 'INDONESIA' ? '🇮🇩 Nasional' : prov.replace('DI ', '').replace('DKI ', ''),
+                            data: dataValues,
+                            borderColor: colors[i],
+                            backgroundColor: colors[i] + '20',
+                            fill: false,
+                            tension: 0.4,
+                            spanGaps: true
+                        };
+                    });
+
+                    // Assign labels and datasets separately
+                    window.trenChart.data.labels = labels;
+                    window.trenChart.data.datasets = datasets;
+                    window.trenChart.update();
                 }
             }
         }
-    </script>
+</script>
+
+<div class="flex h-screen overflow-hidden" :class="darkMode ? 'bg-slate-900' : 'bg-[#F7F9FC]'" x-data="app()" x-init="init()">
+    {% block content %}{% endblock %}
+</div>
 </body>
 </html>

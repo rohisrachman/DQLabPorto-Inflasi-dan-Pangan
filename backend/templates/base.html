@@ -252,33 +252,31 @@
                     }
                 },
                 initChart() {
-                    if (window.trenChart) return;
+                    if (window.trenChart) {
+                        console.log('Chart already initialized');
+                        return;
+                    }
+                    
+                    console.log('initChart called, checking conditions...');
                     
                     if (typeof Chart === 'undefined') {
                         console.warn('Chart.js not loaded, retrying...');
-                        setTimeout(() => this.initChart(), 200);
+                        setTimeout(() => this.initChart(), 500);
                         return;
                     }
                     
                     const ctx = document.getElementById('trenChart');
+                    console.log('Canvas element:', ctx);
+                    
                     if (!ctx) {
-                        console.warn('Chart canvas not found, using MutationObserver...');
-                        // Use MutationObserver to wait for canvas element
-                        const observer = new MutationObserver((mutations, obs) => {
-                            const canvas = document.getElementById('trenChart');
-                            if (canvas) {
-                                obs.disconnect();
-                                this.initChart();
-                            }
-                        });
-                        observer.observe(document.body, {
-                            childList: true,
-                            subtree: true
-                        });
+                        console.warn('Chart canvas not found, retrying...');
+                        // Simple retry with longer delay
+                        setTimeout(() => this.initChart(), 500);
                         return;
                     }
                     
                     try {
+                        console.log('Initializing chart with canvas:', ctx);
                         window.trenChart = new Chart(ctx, {
                             type: 'line',
                             data: {
@@ -369,7 +367,7 @@
                                 }
                             }
                         });
-                        console.log('Chart initialized:', window.trenChart);
+                        console.log('Chart initialized successfully:', window.trenChart);
                     } catch (error) {
                         console.error('Error initializing chart:', error);
                     }

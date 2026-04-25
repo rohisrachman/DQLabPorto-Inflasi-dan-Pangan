@@ -349,7 +349,13 @@
                 updateChart() {
                     console.log('updateChart called, window.trenChart:', window.trenChart, 'trenData:', this.trenData);
                     if (!window.trenChart) {
-                        console.error('Chart not initialized');
+                        console.error('Chart not initialized, retrying...');
+                        // Retry after a short delay
+                        setTimeout(() => {
+                            if (window.trenChart) {
+                                this.updateChart();
+                            }
+                        }, 300);
                         return;
                     }
                     if (!this.trenData || this.trenData.length === 0) {

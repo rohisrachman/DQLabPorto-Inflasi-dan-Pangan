@@ -183,11 +183,15 @@ def root():
     })
 
 @app.route("/api/kpi")
-@cache.cached(timeout=300, key_prefix='kpi')
+@cache.cached(timeout=300, query_string=True)
 def kpi():
     df, date_cols = load_inflasi()
-    # Use Indonesia row, latest available date with real value
-    idn = df[df["Provinsi"] == "INDONESIA"]
+    
+    # Get provinsi parameter, default to INDONESIA
+    provinsi = request.args.get('provinsi', 'INDONESIA').upper()
+    
+    # Use specified province row, latest available date with real value
+    idn = df[df["Provinsi"] == provinsi]
 
     def latest_val(tipe):
         row = idn[idn["Tipe_Inflasi"] == tipe]
@@ -236,9 +240,9 @@ def kpi():
                 }
 
     return jsonify({
-        "yoy": {"value": yoy, "date": yoy_date, "prev": prev_val(TIPE_YOY), "region": "Nasional"},
-        "mom": {"value": mom, "date": mom_date, "prev": prev_val(TIPE_MOM), "region": "Nasional"},
-        "ytd": {"value": ytd, "date": ytd_date, "prev": prev_val(TIPE_YTD), "region": "Nasional"},
+        "yoy": {"value": yoy, "date": yoy_date, "prev": prev_val(TIPE_YOY), "region": provinsi},
+        "mom": {"value": mom, "date": mom_date, "prev": prev_val(TIPE_MOM), "region": provinsi},
+        "ytd": {"value": ytd, "date": ytd_date, "prev": prev_val(TIPE_YTD), "region": provinsi},
         "commodities": commodity_kpi
     })
 

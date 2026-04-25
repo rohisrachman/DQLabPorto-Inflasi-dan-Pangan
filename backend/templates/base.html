@@ -241,10 +241,124 @@
                             day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
                         });
                         this.isLoading = false;
+                        // Initialize chart after loading is complete
+                        this.$nextTick(() => {
+                            setTimeout(() => this.initChart(), 100);
+                        });
                     } catch (err) {
                         console.error('Initialization error:', err);
                         this.error = 'Gagal memuat dashboard. Silakan refresh halaman.';
                         this.isLoading = false;
+                    }
+                },
+                initChart() {
+                    if (window.trenChart) return;
+                    
+                    const ctx = document.getElementById('trenChart');
+                    if (!ctx) {
+                        console.error('Chart canvas element not found');
+                        return;
+                    }
+                    
+                    if (typeof Chart === 'undefined') {
+                        console.error('Chart.js not loaded');
+                        return;
+                    }
+                    
+                    try {
+                        window.trenChart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: [],
+                                datasets: []
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom',
+                                        labels: {
+                                            font: { size: 11 },
+                                            usePointStyle: true,
+                                            padding: 15
+                                        }
+                                    },
+                                    tooltip: {
+                                        mode: 'index',
+                                        intersect: false,
+                                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                        padding: 12,
+                                        titleFont: { size: 12 },
+                                        bodyFont: { size: 11 },
+                                        callbacks: {
+                                            title: function(context) {
+                                                return context[0].label;
+                                            },
+                                            label: function(context) {
+                                                const label = context.dataset.label || '';
+                                                const value = context.parsed.y;
+                                                const change = value.toFixed(2) + '%';
+                                                const prov = label;
+                                                return `${prov}: ${change}`;
+                                            },
+                                            afterBody: function(context) {
+                                                const data = context[0];
+                                                const period = data.label;
+                                                return `Periode: ${period}\nTipe: ${window.Alpine.store('app').tipeTren}`;
+                                            }
+                                        }
+                                    },
+                                    beforeDraw: function(chart) {
+                                        const ctx = chart.ctx;
+                                        const yAxis = chart.scales.y;
+                                        const xAxis = chart.scales.x;
+                                        
+                                        const y1 = yAxis.getPixelForValue(3.5);
+                                        const y2 = yAxis.getPixelForValue(1.5);
+                                        
+                                        ctx.save();
+                                        ctx.fillStyle = 'rgba(148, 163, 184, 0.1)';
+                                        ctx.fillRect(xAxis.left, y1, xAxis.right - xAxis.left, y2 - y1);
+                                        ctx.restore();
+                                    }
+                                },
+                                scales: {
+                                    x: {
+                                        grid: {
+                                            display: false
+                                        },
+                                        ticks: {
+                                            font: { size: 10 }
+                                        }
+                                    },
+                                    y: {
+                                        grid: {
+                                            color: '#e2e8f0'
+                                        },
+                                        ticks: {
+                                            font: { size: 10 },
+                                            callback: function(value) {
+                                                return value + '%';
+                                            }
+                                        }
+                                    }
+                                },
+                                elements: {
+                                    line: {
+                                        tension: 0.4,
+                                        borderWidth: 2
+                                    },
+                                    point: {
+                                        radius: 3,
+                                        hoverRadius: 5
+                                    }
+                                }
+                            }
+                        });
+                        console.log('Chart initialized:', window.trenChart);
+                    } catch (error) {
+                        console.error('Error initializing chart:', error);
                     }
                 },
                 toggleDarkMode() {

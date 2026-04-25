@@ -414,16 +414,7 @@
                         <div :class="darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'" class="rounded-2xl shadow-sm border p-4 flex-1" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" style="transition-delay: 400ms">
                             <div class="flex items-center justify-between mb-3">
                                 <h3 :class="darkMode ? 'text-white' : 'text-slate-800'" class="text-sm font-semibold">Top 3 Inflasi Nasional</h3>
-                                <div class="flex gap-1 bg-slate-100 rounded-lg p-1">
-                                    <template x-for="t in ['YoY', 'MtM', 'YTD']">
-                                        <button
-                                            @click="topInflasiType = t; loadTopInflasiData()"
-                                            :class="topInflasiType === t ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'"
-                                            class="px-2 py-0.5 rounded text-[10px] font-semibold transition-all"
-                                            x-text="t">
-                                        </button>
-                                    </template>
-                                </div>
+                                <span class="text-[10px] text-slate-500">Maret 2026 (YoY)</span>
                             </div>
                             <div class="space-y-2">
                                 <template x-for="(item, idx) in topInflasiData || []" :key="idx">

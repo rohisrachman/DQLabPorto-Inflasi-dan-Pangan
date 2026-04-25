@@ -222,33 +222,59 @@
                         this.darkMode = true;
                         document.documentElement.classList.add('dark');
                     }
+                    
+                    // Set a timeout to force loading complete after 10 seconds
+                    const loadingTimeout = setTimeout(() => {
+                        console.warn('Loading timeout reached, forcing isLoading = false');
+                        this.isLoading = false;
+                    }, 10000);
+                    
                     try {
+                        console.log('Starting dashboard initialization...');
                         this.loadFavorites();
+                        console.log('Loading provinsi list...');
                         await this.loadProvinsiList();
+                        console.log('Loading KPI...');
                         await this.loadKPI();
+                        console.log('Loading tren inflasi...');
                         await this.loadTrenInflasi();
+                        console.log('Loading komoditas list...');
                         await this.loadKomoditasList();
+                        console.log('Loading harga summary...');
                         await this.loadHargaSummary();
+                        console.log('Loading top inflasi...');
                         await this.loadTopInflasi();
+                        console.log('Loading period list...');
                         await this.loadPeriodList();
+                        console.log('Loading regional inflasi...');
                         await this.loadRegionalInflasi();
+                        console.log('Loading commodity range...');
                         await this.loadCommodityRange();
+                        console.log('Loading price index provinsi...');
                         await this.loadPriceIndexProvinsi();
+                        console.log('Loading top komoditas provinsi...');
                         await this.loadTopKomoditasProvinsi();
+                        console.log('Loading heatmap data...');
                         await this.loadHeatmapData();
+                        console.log('Loading top inflasi data...');
                         await this.loadTopInflasiData();
+                        console.log('All data loaded successfully');
                         this.lastUpdated = new Date().toLocaleString('id-ID', {
                             day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
                         });
                         this.isLoading = false;
+                        clearTimeout(loadingTimeout);
                         // Initialize chart after loading is complete
                         this.$nextTick(() => {
                             setTimeout(() => this.initChart(), 100);
                         });
                     } catch (err) {
                         console.error('Initialization error:', err);
+                        console.error('Error stack:', err.stack);
+                        console.error('Error message:', err.message);
                         this.error = 'Gagal memuat dashboard. Silakan refresh halaman.';
                         this.isLoading = false;
+                        clearTimeout(loadingTimeout);
                     }
                 },
                 initChart() {
@@ -259,8 +285,8 @@
                     
                     console.log('initChart called, checking conditions...');
                     
-                    if (typeof Chart === 'undefined') {
-                        console.warn('Chart.js not loaded, retrying...');
+                    if (typeof Chart === 'undefined' || !Chart || !Chart.prototype) {
+                        console.warn('Chart.js not fully loaded, retrying...');
                         setTimeout(() => this.initChart(), 500);
                         return;
                     }
@@ -277,12 +303,14 @@
                     
                     try {
                         console.log('Initializing chart with canvas:', ctx);
+                        const initialData = {
+                            labels: [],
+                            datasets: []
+                        };
+                        console.log('Initial data structure:', initialData);
                         window.trenChart = new Chart(ctx, {
                             type: 'line',
-                            data: {
-                                labels: [],
-                                datasets: []
-                            },
+                            data: initialData,
                             options: {
                                 responsive: true,
                                 maintainAspectRatio: false,
@@ -538,6 +566,10 @@
                     });
 
                     console.log('Updating chart with labels:', labels, 'datasets:', datasets);
+                    if (!window.trenChart.data) {
+                        console.error('Chart data is undefined');
+                        return;
+                    }
                     window.trenChart.data.labels = labels;
                     window.trenChart.data.datasets = datasets;
                     window.trenChart.update();

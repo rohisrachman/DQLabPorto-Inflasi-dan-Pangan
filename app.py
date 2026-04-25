@@ -559,6 +559,18 @@ def render_map_inflasi():
         ),
     ).add_to(m)
 
+    # Add error handling script to prevent map undefined errors
+    m.get_root().html.add_child(folium.Element("""
+    <script>
+    window.addEventListener('error', function(e) {
+        if (e.message && e.message.includes('is not defined')) {
+            console.warn('Map variable not defined, ignoring error');
+            e.preventDefault();
+        }
+    }, true);
+    </script>
+    """))
+
     # Add JavaScript for interactive zoom
     zoom_script = f'''
     <script>

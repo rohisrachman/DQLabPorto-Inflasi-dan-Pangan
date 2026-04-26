@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import folium
 import json
-import requests
+import urllib.request
 import os
 import re
 from functools import lru_cache
@@ -102,13 +102,20 @@ def safe_val(v):
 
 
 def download_geojson():
+    global GEOJSON_FILE
     if os.path.exists(GEOJSON_FILE):
         return
+        
+    # Fallback to /tmp for Serverless environments (read-only filesystem)
+    GEOJSON_FILE = "/tmp/indonesia_provinces.geojson"
+    if os.path.exists(GEOJSON_FILE):
+        return
+
     url = "https://raw.githubusercontent.com/superpikar/indonesia-geojson/master/indonesia-edit.json"
     try:
-        r = requests.get(url, timeout=30)
-        with open(GEOJSON_FILE, "w") as f:
-            f.write(r.text)
+        req = urllib.request.urlopen(url, timeout=30)
+        with open(GEOJSON_FILE, "wb") as f:
+            f.write(req.read())
     except Exception as e:
         print(f"GeoJSON download failed: {e}")
 
@@ -160,27 +167,6 @@ def normalize_province(name):
 
 
 # ── API routes ────────────────────────────────────────────────────────────────
-
-@app.route("/")
-def root():
-    return jsonify({
-        "message": "Dashboard Inflasi Indonesia API",
-        "version": "1.0.0",
-        "endpoints": {
-            "GET /api/kpi": "KPI nasional (YoY, MoM, YTD)",
-            "GET /api/tren-inflasi?provinsi=INDONESIA&tipe=YoY": "Data tren inflasi",
-            "GET /api/inflasi-peta?tipe=YoY": "Data choropleth per provinsi",
-            "GET /api/top-inflasi": "10 provinsi inflasi tertinggi",
-            "GET /api/harga-summary": "Ringkasan harga semua komoditas",
-            "GET /api/harga-tren?komoditas=Beras": "Tren harga komoditas",
-            "GET /api/harga-latest?komoditas=Beras": "Harga terbaru per kota",
-            "GET /api/map-inflasi?tipe=YoY": "HTML peta folium inflasi",
-            "GET /api/map/<komoditas>": "HTML peta folium harga komoditas",
-            "GET /api/provinsi-list": "Daftar nama provinsi",
-            "GET /api/komoditas-list": "Daftar komoditas",
-            "GET /api/period-list": "Daftar periode data"
-        }
-    })
 
 @app.route("/api/kpi")
 @cache.cached(timeout=300, query_string=True)

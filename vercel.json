@@ -12,11 +12,15 @@
       "dest": "api/index.py"
     }
   ],
-  "includeFiles": [
-    "backend/data/**",
-    "Data/**",
-    "*.xlsx",
-    "*.csv",
-    "*.geojson"
-  ]
+  "functions": {
+    "api/index.py": {
+      "includeFiles": [
+        "backend/data/**",
+        "Data/**",
+        "*.xlsx",
+        "*.csv",
+        "*.geojson"
+      ]
+    }
+  }
 }

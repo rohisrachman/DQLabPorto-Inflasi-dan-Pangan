@@ -40,7 +40,7 @@
         </header>
 
         <!-- Main Content -->
-        <main class="flex-1 overflow-hidden px-6 py-4">
+        <main class="flex-1 overflow-y-auto px-6 py-4">
             <!-- Loading Skeleton -->
             <template x-if="isLoading">
                 <div class="space-y-4">
@@ -318,7 +318,7 @@
                 <!-- ROW 3: Reports Overview -->
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4" style="flex: 0 0 auto; min-height: 180px;">
                     <!-- Left: Total Pergerakan Inflasi (8 columns) -->
-                    <div :class="darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'" class="col-span-12 md:col-span-8 rounded-2xl shadow-sm border p-4 flex flex-col" style="height: 280px;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" style="transition-delay: 300ms">
+                    <div :class="darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'" class="col-span-12 md:col-span-8 rounded-2xl shadow-sm border p-4 flex flex-col" style="height: 330px;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" style="transition-delay: 300ms">
                         <div class="flex items-center justify-between mb-3">
                             <div>
                                 <h3 :class="darkMode ? 'text-white' : 'text-slate-800'" class="text-sm font-semibold">Total Pergerakan Inflasi</h3>

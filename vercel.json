@@ -8,6 +8,10 @@
   ],
   "routes": [
     {
+      "src": "/data/(.*)",
+      "dest": "/backend/data/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "api/index.py"
     }

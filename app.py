@@ -83,7 +83,31 @@ def load_inflasi():
 
 @lru_cache(maxsize=1)
 def load_pihps():
-    df = pd.read_csv(PIHPS_FILE)
+    try:
+        df = pd.read_csv(PIHPS_FILE)
+    except FileNotFoundError:
+        # Try alternative paths for Vercel deployment
+        alt_paths = [
+            os.path.join(os.path.dirname(__file__), "PIHPS_Provinsi_WideFormat.csv"),
+            os.path.join(os.path.dirname(__file__), "Data/PIHPS/PIHPS_Avg_Price_By_Province.xlsx"),
+            "PIHPS_Provinsi_WideFormat.csv",
+            "Data/PIHPS/PIHPS_Avg_Price_By_Province.xlsx"
+        ]
+        df = None
+        for path in alt_paths:
+            try:
+                if path.endswith('.xlsx'):
+                    df = pd.read_excel(path)
+                else:
+                    df = pd.read_csv(path)
+                print(f"Loaded PIHPS data from: {path}")
+                break
+            except:
+                continue
+        
+        if df is None:
+            raise FileNotFoundError(f"PIHPS data file not found. Tried: {PIHPS_FILE}, {alt_paths}")
+    
     date_cols = [c for c in df.columns if re.match(r"[A-Za-z]+ \d{4}", str(c))]
     # parse prices
     for col in date_cols:

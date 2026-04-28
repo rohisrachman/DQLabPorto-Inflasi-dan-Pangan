@@ -61,9 +61,9 @@ def api_docs():
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "backend/data")
 PROJECT_ROOT = os.path.dirname(__file__)
-INFLASI_FILE = os.path.join(DATA_DIR, "BPS_Inflasi_WideFormat_Datetime.xlsx")
-PIHPS_FILE = os.path.join(DATA_DIR, "PIHPS_Provinsi_WideFormat.csv")
-GEOJSON_FILE = os.path.join(DATA_DIR, "indonesia_provinces.geojson")
+INFLASI_FILE = os.path.join(PROJECT_ROOT, "BPS_Inflasi_WideFormat_Datetime.xlsx")
+PIHPS_FILE = os.path.join(PROJECT_ROOT, "PIHPS_Provinsi_WideFormat.csv")
+GEOJSON_FILE = os.path.join(PROJECT_ROOT, "Data", "38 Provinsi Indonesia - Provinsi.json")
 
 TIPE_MOM = "Inflasi Bulanan (M-to-M) 38 Provinsi (2022=100)"
 TIPE_YTD = "Inflasi Tahun Kalender (Y-to-D) 38 Provinsi (2022=100)"

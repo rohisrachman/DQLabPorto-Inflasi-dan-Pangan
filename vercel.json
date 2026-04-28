@@ -11,10 +11,5 @@
       "src": "/(.*)",
       "dest": "api/index.py"
     }
-  ],
-  "includeFiles": [
-    "BPS_Inflasi_WideFormat_Datetime.xlsx",
-    "PIHPS_Provinsi_WideFormat.csv",
-    "Data/**"
   ]
 }

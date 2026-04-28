@@ -8,20 +8,13 @@
   ],
   "routes": [
     {
-      "src": "/BPS_Inflasi_WideFormat_Datetime.xlsx",
-      "dest": "/BPS_Inflasi_WideFormat_Datetime.xlsx"
-    },
-    {
-      "src": "/PIHPS_Provinsi_WideFormat.csv",
-      "dest": "/PIHPS_Provinsi_WideFormat.csv"
-    },
-    {
-      "src": "/Data/(.*)",
-      "dest": "/Data/$1"
-    },
-    {
       "src": "/(.*)",
       "dest": "api/index.py"
     }
+  ],
+  "includeFiles": [
+    "BPS_Inflasi_WideFormat_Datetime.xlsx",
+    "PIHPS_Provinsi_WideFormat.csv",
+    "Data/**"
   ]
 }

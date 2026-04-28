@@ -452,7 +452,7 @@
                     if (this.mapCategory === 'Inflasi') {
                         return `/api/map-inflasi?tipe=${this.tipeMap}&period=${encodeURIComponent(this.selectedPeriod)}&_=${Date.now()}`;
                     } else {
-                        return `/api/map/${encodeURIComponent(this.selectedKomoditas)}?period=${encodeURIComponent(this.selectedPeriod)}&_=${Date.now()}`;
+                        return `/api/map-pangan?komoditas=${encodeURIComponent(this.selectedKomoditas)}&period=${encodeURIComponent(this.selectedPeriod)}&_=${Date.now()}`;
                     }
                 },
 

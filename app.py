@@ -396,10 +396,16 @@ def period_list():
     return jsonify(date_cols)
 
 
-@app.route("/api/map/<komoditas>")
-def render_map(komoditas):
-    """Render a folium choropleth map for a given commodity."""
+@app.route("/api/map-pangan")
+def render_map_pangan():
+    """Render a folium choropleth map for a given commodity using query parameter."""
+    from urllib.parse import unquote
+    
     download_geojson()
+    
+    # Get commodity from query parameter and URL-decode it
+    komoditas = request.args.get("komoditas", "")
+    komoditas = unquote(komoditas)
 
     if not os.path.exists(GEOJSON_FILE):
         return Response("<h3>GeoJSON not available</h3>", content_type="text/html")

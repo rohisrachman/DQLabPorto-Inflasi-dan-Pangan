@@ -471,18 +471,26 @@ def render_map(komoditas):
         ),
     ).add_to(m)
 
-    # Add JavaScript for interactive zoom
+    # Add JavaScript for interactive zoom with proper initialization check
     zoom_script = f'''
     <script>
-    var map = {m.get_name()};
-    var geoJsonLayer = {geo_json_layer.get_name()};
-
-    // Add click handler to each feature for zoom in
-    geoJsonLayer.eachLayer(function(layer) {{
-        layer.on('click', function(e) {{
-            map.fitBounds(e.target.getBounds());
-        }});
-    }});
+    (function() {{
+        var checkMap = setInterval(function() {{
+            var map = window.{m.get_name()};
+            var geoJsonLayer = window.{geo_json_layer.get_name()};
+            
+            if (map && geoJsonLayer) {{
+                clearInterval(checkMap);
+                
+                // Add click handler to each feature for zoom in
+                geoJsonLayer.eachLayer(function(layer) {{
+                    layer.on('click', function(e) {{
+                        map.fitBounds(e.target.getBounds());
+                    }});
+                }});
+            }}
+        }}, 100);
+    }})();
     </script>
     '''
     m.get_root().html.add_child(folium.Element(zoom_script))
@@ -569,30 +577,26 @@ def render_map_inflasi():
         ),
     ).add_to(m)
 
-    # Add error handling script to prevent map undefined errors
-    m.get_root().html.add_child(folium.Element("""
-    <script>
-    window.addEventListener('error', function(e) {
-        if (e.message && e.message.includes('is not defined')) {
-            console.warn('Map variable not defined, ignoring error');
-            e.preventDefault();
-        }
-    }, true);
-    </script>
-    """))
-
-    # Add JavaScript for interactive zoom
+    # Add JavaScript for interactive zoom with proper initialization check
     zoom_script = f'''
     <script>
-    var map = {m.get_name()};
-    var geoJsonLayer = {geo_json_layer.get_name()};
-
-    // Add click handler to each feature for zoom in
-    geoJsonLayer.eachLayer(function(layer) {{
-        layer.on('click', function(e) {{
-            map.fitBounds(e.target.getBounds());
-        }});
-    }});
+    (function() {{
+        var checkMap = setInterval(function() {{
+            var map = window.{m.get_name()};
+            var geoJsonLayer = window.{geo_json_layer.get_name()};
+            
+            if (map && geoJsonLayer) {{
+                clearInterval(checkMap);
+                
+                // Add click handler to each feature for zoom in
+                geoJsonLayer.eachLayer(function(layer) {{
+                    layer.on('click', function(e) {{
+                        map.fitBounds(e.target.getBounds());
+                    }});
+                }});
+            }}
+        }}, 100);
+    }})();
     </script>
     '''
     m.get_root().html.add_child(folium.Element(zoom_script))

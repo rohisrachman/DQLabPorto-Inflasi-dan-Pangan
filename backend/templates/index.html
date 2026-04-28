@@ -217,7 +217,7 @@
                                     </div>
                                 </template>
                             </div>
-                            <div class="flex gap-1">
+                            <div class="flex gap-1" x-show="mapCategory !== 'Pangan'">
                                 <template x-for="t in ['YoY', 'MtM', 'YTD']">
                                     <button
                                         @click="setTipeMap(t)"

@@ -406,6 +406,24 @@ def render_map_pangan():
     # Get commodity from query parameter and URL-decode it
     komoditas = request.args.get("komoditas", "")
     komoditas = unquote(komoditas)
+    
+    return _render_pangan_map(komoditas)
+
+
+@app.route("/api/map/<komoditas>")
+def render_map_legacy(komoditas):
+    """Legacy endpoint for backward compatibility - path parameter."""
+    from urllib.parse import unquote
+    
+    # URL-decode the commodity name from path parameter
+    komoditas = unquote(komoditas)
+    
+    return _render_pangan_map(komoditas)
+
+
+def _render_pangan_map(komoditas):
+    """Shared logic for rendering pangan map."""
+    download_geojson()
 
     if not os.path.exists(GEOJSON_FILE):
         return Response("<h3>GeoJSON not available</h3>", content_type="text/html")
